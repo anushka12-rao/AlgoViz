@@ -33,4 +33,24 @@ describe('Phase 9B Backend Skeleton Tests', () => {
     assert.strictEqual(res.body.error.code, 'INVALID_JSON');
     assert.strictEqual(res.body.error.message, 'Malformed JSON payload in request body');
   });
+
+  it('OPTIONS preflight returns 204 with CORS allow headers for allowed origin', async () => {
+    const res = await request(app)
+      .options('/api/health')
+      .set('Origin', 'http://localhost:3000');
+
+    assert.strictEqual(res.status, 204);
+    assert.strictEqual(res.headers['access-control-allow-origin'], 'http://localhost:3000');
+    assert.strictEqual(res.headers['access-control-allow-methods'], 'GET, POST, OPTIONS');
+    assert.ok(res.headers['access-control-allow-headers'].includes('Content-Type'));
+  });
+
+  it('GET request with allowed Origin header receives Access-Control-Allow-Origin', async () => {
+    const res = await request(app)
+      .get('/api/health')
+      .set('Origin', 'http://localhost:3000');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['access-control-allow-origin'], 'http://localhost:3000');
+  });
 });

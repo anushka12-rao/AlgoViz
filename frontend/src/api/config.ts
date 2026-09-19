@@ -1,5 +1,5 @@
 export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined)?.trim() || '/api';
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/+$/, '') || '/api';
 
 export const API_ENDPOINTS = {
   algorithms: `${API_BASE_URL}/algorithms`,
