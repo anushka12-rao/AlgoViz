@@ -23,6 +23,11 @@ struct StepEvent {
     std::vector<int> active_indices;
     std::vector<int> array_state;
     std::vector<TreeNodeRecord> tree_state;
+    std::vector<std::vector<int>> graph_adj;
+    std::vector<int> graph_traversal;
+    std::vector<int> graph_queue;
+    std::vector<bool> graph_visited;
+    int current_vertex;
     int sorted_boundary;
     int range_st;
     int range_end;
@@ -31,7 +36,7 @@ struct StepEvent {
     int pivot_val;
     std::map<std::string, int> stats;
 
-    StepEvent() : step_index(0), canonical_duration_ms(0), sorted_boundary(-1),
+    StepEvent() : step_index(0), canonical_duration_ms(0), current_vertex(-1), sorted_boundary(-1),
                   range_st(-1), range_end(-1), range_mid(-1), pivot_idx(-1), pivot_val(0) {}
 };
 
@@ -151,6 +156,27 @@ public:
     virtual void onBSTDelete(const std::vector<TreeNodeRecord> & /*tree*/, int /*val*/, bool /*deleted*/, const std::vector<int> & /*sortedValues*/, const std::string & /*msg*/) {}
     virtual void onBSTSorted(const std::vector<TreeNodeRecord> & /*tree*/, const std::vector<int> & /*sortedValues*/, bool /*empty*/) {}
     virtual void onBSTClear(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*msg*/) {}
+
+    // Graph specific hooks
+    virtual void onGraphInit(int /*vertices*/) {}
+    virtual void onGraphAddEdge(int /*u*/, int /*v*/, bool /*success*/) {}
+    virtual void onGraphPrint(int /*vertices*/, const std::vector<std::vector<int>> & /*adjList*/) {}
+
+    // BFS hooks
+    virtual void onBFSTraversalStart(int /*vertices*/, int /*src*/, const std::vector<std::vector<int>> & /*adjList*/) {}
+    virtual void onBFSVertexDequeued(int /*u*/, const std::vector<int> & /*currentQueue*/, const std::vector<bool> & /*visited*/) {}
+    virtual void onBFSNeighborInspect(int /*u*/, int /*v*/, bool /*alreadyVisited*/) {}
+    virtual void onBFSVertexEnqueued(int /*v*/, const std::vector<int> & /*currentQueue*/, const std::vector<bool> & /*visited*/) {}
+    virtual void onBFSComponentTransition(int /*nextComponentRoot*/) {}
+    virtual void onBFSTraversalComplete(int /*vertices*/, int /*src*/, const std::vector<int> & /*traversalOrder*/, const std::vector<std::vector<int>> & /*adjList*/) {}
+
+    // DFS hooks
+    virtual void onDFSTraversalStart(int /*vertices*/, int /*src*/, const std::vector<std::vector<int>> & /*adjList*/) {}
+    virtual void onDFSVertexEnter(int /*u*/, const std::vector<int> & /*callStack*/, const std::vector<bool> & /*visited*/) {}
+    virtual void onDFSNeighborInspect(int /*u*/, int /*v*/, bool /*alreadyVisited*/) {}
+    virtual void onDFSVertexBacktrack(int /*u*/, const std::vector<int> & /*callStack*/) {}
+    virtual void onDFSComponentTransition(int /*nextComponentRoot*/) {}
+    virtual void onDFSTraversalComplete(int /*vertices*/, int /*src*/, const std::vector<int> & /*traversalOrder*/, const std::vector<std::vector<int>> & /*adjList*/) {}
 };
 
 // ConsoleObserver: Renders existing terminal output and handles Sleep / waitForEnter
@@ -272,6 +298,11 @@ public:
     void onBSTDelete(const std::vector<TreeNodeRecord> &tree, int val, bool deleted, const std::vector<int> &sortedValues, const std::string &msg) override;
     void onBSTSorted(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &sortedValues, bool empty) override;
     void onBSTClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) override;
+
+    // Graph hooks
+    void onGraphPrint(int vertices, const std::vector<std::vector<int>> &adjList) override;
+    void onBFSTraversalComplete(int vertices, int src, const std::vector<int> &traversalOrder, const std::vector<std::vector<int>> &adjList) override;
+    void onDFSTraversalComplete(int vertices, int src, const std::vector<int> &traversalOrder, const std::vector<std::vector<int>> &adjList) override;
 
     // Terminal renderers
     void renderStack(const std::vector<int> &v, int highlightIndex = -1, const std::string &statusMsg = "") const;

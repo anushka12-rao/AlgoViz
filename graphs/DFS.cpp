@@ -1,3 +1,5 @@
+﻿#include "DFS.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -6,88 +8,134 @@
 
 using namespace std;
 
-class GraphDFS
-{
-    int V;
-    list<int> *adj;
+GraphDFS::GraphDFS(int vertices, IAlgoObserver *obs) : V(vertices), observer(obs) {
+    adj = new list<int>[V];
+    if (observer) {
+        observer->onGraphInit(V);
+    }
+}
 
-    // Recursive helper: marks current vertex and explores neighbor branches
-    void dfsHelper(int u, vector<bool> &vis) const
-    {
-        vis[u] = true;
-        cout << u << " ";
+GraphDFS::~GraphDFS() {
+    delete[] adj;
+}
 
-        for (int v : adj[u])
-        {
-            if (!vis[v])
-            {
-                dfsHelper(v, vis);
-            }
+void GraphDFS::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
+
+IAlgoObserver* GraphDFS::getObserver() const {
+    return observer;
+}
+
+int GraphDFS::getVertexCount() const {
+    return V;
+}
+
+bool GraphDFS::addEdge(int u, int v) {
+    if (u < 0 || u >= V || v < 0 || v >= V) {
+        if (observer) {
+            observer->onGraphAddEdge(u, v, false);
+        }
+        return false;
+    }
+    adj[u].push_back(v);
+    if (u != v) {
+        adj[v].push_back(u);
+    }
+    if (observer) {
+        observer->onGraphAddEdge(u, v, true);
+    }
+    return true;
+}
+
+vector<vector<int>> GraphDFS::getAdjacencyList() const {
+    vector<vector<int>> res(V);
+    for (int i = 0; i < V; i++) {
+        for (int neighbor : adj[i]) {
+            res[i].push_back(neighbor);
         }
     }
+    return res;
+}
 
-public:
-    GraphDFS(int vertices)
-    {
-        V = vertices;
-        adj = new list<int>[V];
-    }
-
-    ~GraphDFS()
-    {
-        delete[] adj;
-    }
-
-    // Add undirected edge between u and v
-    bool addEdge(int u, int v)
-    {
-        if (u < 0 || u >= V || v < 0 || v >= V)
-            return false;
-        adj[u].push_back(v);
-        if (u != v)
-        {
-            adj[v].push_back(u);
-        }
-        return true;
-    }
-
-    void printGraph() const
-    {
+void GraphDFS::printGraph() const {
+    if (observer) {
+        observer->onGraphPrint(V, getAdjacencyList());
+    } else {
         cout << "\nAdjacency List:\n";
-        for (int i = 0; i < V; i++)
-        {
+        for (int i = 0; i < V; i++) {
             cout << " [" << i << "] -> ";
-            for (int neighbor : adj[i])
-            {
+            for (int neighbor : adj[i]) {
                 cout << neighbor << " ";
             }
             cout << "\n";
         }
     }
+}
 
-    // DFS Traversal: explores deep into each branch before backtracking
-    void dfs(int src = 0) const
-    {
-        if (V == 0)
-            return;
+void GraphDFS::dfsHelper(int u, vector<bool> &vis, vector<int> &traversal, vector<int> &callStack) const {
+    vis[u] = true;
+    traversal.push_back(u);
+    callStack.push_back(u);
 
-        vector<bool> vis(V, false);
-        cout << "\nDFS Traversal Output: ";
+    if (observer) {
+        observer->onDFSVertexEnter(u, callStack, vis);
+    }
 
-        // Step 1: Traverse starting component
-        dfsHelper(src, vis);
-
-        // Step 2: Traverse any remaining disconnected components
-        for (int i = 0; i < V; i++)
-        {
-            if (!vis[i])
-            {
-                dfsHelper(i, vis);
+    for (int v : adj[u]) {
+        if (!vis[v]) {
+            if (observer) {
+                observer->onDFSNeighborInspect(u, v, false);
+            }
+            dfsHelper(v, vis, traversal, callStack);
+        } else {
+            if (observer) {
+                observer->onDFSNeighborInspect(u, v, true);
             }
         }
-        cout << "\n";
     }
-};
+
+    callStack.pop_back();
+    if (observer) {
+        observer->onDFSVertexBacktrack(u, callStack);
+    }
+}
+
+vector<int> GraphDFS::dfs(int src) const {
+    vector<int> traversal;
+    if (V == 0) return traversal;
+
+    if (src < 0 || src >= V) {
+        src = 0;
+    }
+
+    auto adjSnapshot = getAdjacencyList();
+    if (observer) {
+        observer->onDFSTraversalStart(V, src, adjSnapshot);
+    }
+
+    vector<bool> vis(V, false);
+    vector<int> callStack;
+
+    // Step 1: Traverse starting component
+    dfsHelper(src, vis, traversal, callStack);
+
+    // Step 2: Traverse any remaining disconnected components
+    for (int i = 0; i < V; i++) {
+        if (!vis[i]) {
+            if (observer) {
+                observer->onDFSComponentTransition(i);
+            }
+            dfsHelper(i, vis, traversal, callStack);
+        }
+    }
+
+    if (observer) {
+        observer->onDFSTraversalComplete(V, src, traversal, adjSnapshot);
+    }
+
+    return traversal;
+}
 
 // Entry point called by main.cpp
 void dfsVisualizer()
@@ -105,7 +153,8 @@ void dfsVisualizer()
     }
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    GraphDFS g(vertices);
+    ConsoleObserver obs(true);
+    GraphDFS g(vertices, &obs);
     int choice = -1;
 
     while (choice != 0)

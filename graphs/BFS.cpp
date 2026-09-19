@@ -1,3 +1,5 @@
+﻿#include "BFS.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -7,109 +9,171 @@
 
 using namespace std;
 
-class GraphBFS
-{
-    int V;
-    list<int> *adj;
-
-public:
-    GraphBFS(int vertices)
-    {
-        V = vertices;
-        adj = new list<int>[V];
+GraphBFS::GraphBFS(int vertices, IAlgoObserver *obs) : V(vertices), observer(obs) {
+    adj = new list<int>[V];
+    if (observer) {
+        observer->onGraphInit(V);
     }
+}
 
-    ~GraphBFS()
-    {
-        delete[] adj;
-    }
+GraphBFS::~GraphBFS() {
+    delete[] adj;
+}
 
-    // Add undirected edge between u and v
-    bool addEdge(int u, int v)
-    {
-        if (u < 0 || u >= V || v < 0 || v >= V)
-            return false;
-        adj[u].push_back(v);
-        if (u != v)
-        {
-            adj[v].push_back(u);
+void GraphBFS::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
+
+IAlgoObserver* GraphBFS::getObserver() const {
+    return observer;
+}
+
+int GraphBFS::getVertexCount() const {
+    return V;
+}
+
+bool GraphBFS::addEdge(int u, int v) {
+    if (u < 0 || u >= V || v < 0 || v >= V) {
+        if (observer) {
+            observer->onGraphAddEdge(u, v, false);
         }
-        return true;
+        return false;
     }
+    adj[u].push_back(v);
+    if (u != v) {
+        adj[v].push_back(u);
+    }
+    if (observer) {
+        observer->onGraphAddEdge(u, v, true);
+    }
+    return true;
+}
 
-    void printGraph() const
-    {
+vector<vector<int>> GraphBFS::getAdjacencyList() const {
+    vector<vector<int>> res(V);
+    for (int i = 0; i < V; i++) {
+        for (int neighbor : adj[i]) {
+            res[i].push_back(neighbor);
+        }
+    }
+    return res;
+}
+
+void GraphBFS::printGraph() const {
+    if (observer) {
+        observer->onGraphPrint(V, getAdjacencyList());
+    } else {
         cout << "\nAdjacency List:\n";
-        for (int i = 0; i < V; i++)
-        {
+        for (int i = 0; i < V; i++) {
             cout << " [" << i << "] -> ";
-            for (int neighbor : adj[i])
-            {
+            for (int neighbor : adj[i]) {
                 cout << neighbor << " ";
             }
             cout << "\n";
         }
     }
+}
 
-    // BFS Traversal: explores level-by-level using a FIFO queue
-    void bfs(int src = 0) const
-    {
-        if (V == 0)
-            return;
+vector<int> GraphBFS::bfs(int src) const {
+    vector<int> traversal;
+    if (V == 0) return traversal;
 
-        vector<bool> vis(V, false);
-        queue<int> Q;
+    if (src < 0 || src >= V) {
+        src = 0;
+    }
 
-        cout << "\nBFS Traversal Output: ";
+    auto adjSnapshot = getAdjacencyList();
+    if (observer) {
+        observer->onBFSTraversalStart(V, src, adjSnapshot);
+    }
 
-        // Step 1: Process primary component starting at src
-        vis[src] = true;
-        Q.push(src);
+    vector<bool> vis(V, false);
+    queue<int> Q;
+    vector<int> currentQueue;
 
-        while (!Q.empty())
-        {
-            int u = Q.front();
-            Q.pop();
-            cout << u << " ";
+    // Step 1: Process primary component starting at src
+    vis[src] = true;
+    Q.push(src);
+    currentQueue.push_back(src);
+    if (observer) {
+        observer->onBFSVertexEnqueued(src, currentQueue, vis);
+    }
 
-            for (int v : adj[u])
-            {
-                if (!vis[v])
-                {
-                    vis[v] = true;
-                    Q.push(v);
+    while (!Q.empty()) {
+        int u = Q.front();
+        Q.pop();
+        currentQueue.erase(currentQueue.begin());
+        traversal.push_back(u);
+
+        if (observer) {
+            observer->onBFSVertexDequeued(u, currentQueue, vis);
+        }
+
+        for (int v : adj[u]) {
+            if (!vis[v]) {
+                vis[v] = true;
+                Q.push(v);
+                currentQueue.push_back(v);
+                if (observer) {
+                    observer->onBFSNeighborInspect(u, v, false);
+                    observer->onBFSVertexEnqueued(v, currentQueue, vis);
+                }
+            } else {
+                if (observer) {
+                    observer->onBFSNeighborInspect(u, v, true);
                 }
             }
         }
+    }
 
-        // Step 2: Process any remaining disconnected components
-        for (int i = 0; i < V; i++)
-        {
-            if (!vis[i])
-            {
-                vis[i] = true;
-                Q.push(i);
+    // Step 2: Process any remaining disconnected components
+    for (int i = 0; i < V; i++) {
+        if (!vis[i]) {
+            if (observer) {
+                observer->onBFSComponentTransition(i);
+            }
+            vis[i] = true;
+            Q.push(i);
+            currentQueue.push_back(i);
+            if (observer) {
+                observer->onBFSVertexEnqueued(i, currentQueue, vis);
+            }
 
-                while (!Q.empty())
-                {
-                    int u = Q.front();
-                    Q.pop();
-                    cout << u << " ";
+            while (!Q.empty()) {
+                int u = Q.front();
+                Q.pop();
+                currentQueue.erase(currentQueue.begin());
+                traversal.push_back(u);
 
-                    for (int v : adj[u])
-                    {
-                        if (!vis[v])
-                        {
-                            vis[v] = true;
-                            Q.push(v);
+                if (observer) {
+                    observer->onBFSVertexDequeued(u, currentQueue, vis);
+                }
+
+                for (int v : adj[u]) {
+                    if (!vis[v]) {
+                        vis[v] = true;
+                        Q.push(v);
+                        currentQueue.push_back(v);
+                        if (observer) {
+                            observer->onBFSNeighborInspect(u, v, false);
+                            observer->onBFSVertexEnqueued(v, currentQueue, vis);
+                        }
+                    } else {
+                        if (observer) {
+                            observer->onBFSNeighborInspect(u, v, true);
                         }
                     }
                 }
             }
         }
-        cout << "\n";
     }
-};
+
+    if (observer) {
+        observer->onBFSTraversalComplete(V, src, traversal, adjSnapshot);
+    }
+
+    return traversal;
+}
 
 // Entry point called by main.cpp
 void bfsVisualizer()
@@ -128,7 +192,8 @@ void bfsVisualizer()
     // Flush remaining newline so it doesn't bleed into the menu
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    GraphBFS g(vertices);
+    ConsoleObserver obs(true);
+    GraphBFS g(vertices, &obs);
     int choice = -1;
 
     while (choice != 0)

@@ -1057,3 +1057,44 @@ void ConsoleObserver::onBSTSorted(const std::vector<TreeNodeRecord> &tree, const
 void ConsoleObserver::onBSTClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) {
     renderBST(tree, msg);
 }
+
+// ----------------------------------------------------------------------------
+// Graph Visualizer Hooks
+// ----------------------------------------------------------------------------
+
+void ConsoleObserver::onGraphPrint(int vertices, const std::vector<std::vector<int>> &adjList) {
+    std::cout << "\nAdjacency List:\n";
+    for (int i = 0; i < vertices; i++)
+    {
+        std::cout << " [" << i << "] -> ";
+        for (int neighbor : adjList[i])
+        {
+            std::cout << neighbor << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
+void ConsoleObserver::onBFSTraversalComplete(int vertices, int src, const std::vector<int> &traversalOrder, const std::vector<std::vector<int>> &adjList) {
+    (void)vertices;
+    (void)src;
+    (void)adjList;
+    std::cout << "\nBFS Traversal Output: ";
+    for (int u : traversalOrder)
+    {
+        std::cout << u << " ";
+    }
+    std::cout << "\n";
+}
+
+void ConsoleObserver::onDFSTraversalComplete(int vertices, int src, const std::vector<int> &traversalOrder, const std::vector<std::vector<int>> &adjList) {
+    (void)vertices;
+    (void)src;
+    (void)adjList;
+    std::cout << "\nDFS Traversal Output: ";
+    for (int u : traversalOrder)
+    {
+        std::cout << u << " ";
+    }
+    std::cout << "\n";
+}
