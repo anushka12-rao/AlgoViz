@@ -463,3 +463,399 @@ void ConsoleObserver::onBinarySearchComplete(const std::vector<int> &arr, int ta
 
     printComplexity("O(1)", "O(logn)", "O(logn)", "O(1)");
 }
+
+// ----------------------------------------------------------------------------
+// Stack Visualizer Helpers & Hooks
+// ----------------------------------------------------------------------------
+static const int OBS_STACK_MAX_CAPACITY = 7;
+
+void ConsoleObserver::renderStack(const std::vector<int> &v, int highlightIndex, const std::string &statusMsg) const {
+    cout << "\n========================================\n";
+    cout << "           STACK VISUALIZER (LIFO)      \n";
+    cout << "========================================\n\n";
+
+    if (!statusMsg.empty())
+    {
+        cout << " Status: " << statusMsg << "\n\n";
+    }
+
+    if (v.empty())
+    {
+        cout << "       |          |\n";
+        cout << "       |  (EMPTY) |\n";
+        cout << "       +----------+\n";
+        cout << "        STACK BASE \n";
+        cout << "\n Size: 0 / " << OBS_STACK_MAX_CAPACITY << " | Top Index: -1\n";
+        return;
+    }
+
+    // Render remaining empty headroom slots
+    for (int i = OBS_STACK_MAX_CAPACITY - 1; i >= static_cast<int>(v.size()); i--)
+    {
+        cout << "       |          |\n";
+    }
+
+    // Render stored vector elements from top (v.size() - 1) down to index 0
+    for (int i = static_cast<int>(v.size()) - 1; i >= 0; i--)
+    {
+        bool isTop = (i == static_cast<int>(v.size()) - 1);
+        bool isHighlighted = (i == highlightIndex);
+
+        if (isTop)
+            cout << " top-> ";
+        else
+            cout << "       ";
+
+        cout << "+----------+\n";
+        cout << "       |";
+
+        // Format cell interior to exact 10-character box width
+        string valStr = "[" + to_string(v[i]) + "]";
+        int padLeft = (10 - static_cast<int>(valStr.length())) / 2;
+        int padRight = 10 - static_cast<int>(valStr.length()) - padLeft;
+
+        cout << string(padLeft, ' ');
+        if (isHighlighted)
+            cout << GREEN << valStr << RESET;
+        else if (isTop)
+            cout << CYAN << valStr << RESET;
+        else
+            cout << valStr;
+        cout << string(padRight, ' ') << "|\n";
+    }
+
+    cout << "       +----------+\n";
+    cout << "        STACK BASE \n";
+    cout << "\n Current Size: " << v.size() << " / " << OBS_STACK_MAX_CAPACITY
+         << " | Top Index: " << static_cast<int>(v.size()) - 1 << "\n";
+}
+
+void ConsoleObserver::onStackInit(const std::vector<int> &elements) {
+    renderStack(elements, -1, "Stack initialized using vector<int> v.");
+}
+
+void ConsoleObserver::onStackPush(const std::vector<int> &elements, int val, int highlightIdx) {
+    renderStack(elements, highlightIdx, string(GREEN) + "push(" + to_string(val) + ") complete." + RESET);
+}
+
+void ConsoleObserver::onStackOverflow(const std::vector<int> &elements) {
+    renderStack(elements, -1, string(RED) + "OVERFLOW! Cannot push beyond MAX_CAPACITY." + RESET);
+}
+
+void ConsoleObserver::onStackPop(const std::vector<int> &elements, int poppedVal) {
+    renderStack(elements, -1, string(YELLOW) + "pop() removed " + to_string(poppedVal) + RESET);
+}
+
+void ConsoleObserver::onStackUnderflow(const std::vector<int> &elements) {
+    renderStack(elements, -1, string(RED) + "UNDERFLOW! Cannot pop from empty stack." + RESET);
+}
+
+void ConsoleObserver::onStackTop(const std::vector<int> &elements, int topVal, int highlightIdx, bool empty) {
+    if (empty) {
+        renderStack(elements, -1, string(YELLOW) + "s.empty() is true. No top element." + RESET);
+    } else {
+        renderStack(elements, highlightIdx, string(CYAN) + "s.top() => " + to_string(topVal) + RESET);
+    }
+}
+
+void ConsoleObserver::onStackEmptyCheck(const std::vector<int> &elements, bool isEmpty) {
+    if (isEmpty)
+        renderStack(elements, -1, "s.empty() == true (Stack is empty)");
+    else
+        renderStack(elements, -1, "s.empty() == false (Size: " + to_string(elements.size()) + ")");
+}
+
+void ConsoleObserver::onStackClear(const std::vector<int> &elements) {
+    renderStack(elements, -1, "Stack cleared.");
+}
+
+// ----------------------------------------------------------------------------
+// Queue Visualizer Helpers & Hooks
+// ----------------------------------------------------------------------------
+static const int OBS_QUEUE_VISUAL_LIMIT = 6;
+
+void ConsoleObserver::renderQueue(const std::vector<int> &v, const std::string &statusMsg) const {
+    cout << "\n======================================================\n";
+    cout << "           QUEUE VISUALIZER (FIFO - LINKED LIST)      \n";
+    cout << "======================================================\n\n";
+
+    if (!statusMsg.empty())
+    {
+        cout << " Status: " << statusMsg << "\n\n";
+    }
+
+    int count = static_cast<int>(v.size());
+
+    if (count == 0)
+    {
+        cout << "  head -> NULL\n";
+        cout << "  tail -> NULL\n";
+        cout << "\n  [ QUEUE IS EMPTY ]\n";
+        cout << "\n Current Size: 0 | Front: None | Rear: None\n";
+        return;
+    }
+
+    int visibleCount = (count <= OBS_QUEUE_VISUAL_LIMIT) ? count : OBS_QUEUE_VISUAL_LIMIT;
+
+    // Pointer indicators
+    cout << "          head";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_QUEUE_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_QUEUE_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << "tail";
+    }
+    cout << "\n";
+
+    // Downward arrows
+    cout << "           |  ";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_QUEUE_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_QUEUE_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << " |  ";
+    }
+    cout << "\n";
+
+    cout << "           v  ";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_QUEUE_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_QUEUE_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << " v  ";
+    }
+    cout << "\n";
+
+    // Top borders
+    cout << "  ";
+    for (int i = 0; i < visibleCount; i++)
+    {
+        cout << "+--------+    ";
+    }
+    cout << "\n  ";
+
+    // Cell values
+    for (int i = 0; i < visibleCount; i++)
+    {
+        string valStr = to_string(v[i]);
+        int pad = 6 - static_cast<int>(valStr.length());
+        int padL = (pad > 0) ? pad / 2 : 0;
+        int padR = (pad > 0) ? pad - padL : 0;
+
+        cout << "| " << string(padL, ' ') << CYAN << valStr << RESET << string(padR, ' ') << " |";
+        if (i < count - 1 && i < visibleCount - 1)
+        {
+            cout << " -> ";
+        }
+        else if (i < count - 1 && i == visibleCount - 1)
+        {
+            cout << " -> ...";
+        }
+        else
+        {
+            cout << " -> NULL";
+        }
+    }
+    cout << "\n  ";
+
+    // Bottom borders
+    for (int i = 0; i < visibleCount; i++)
+    {
+        cout << "+--------+    ";
+    }
+    cout << "\n";
+
+    cout << "\n Current Size: " << count
+         << " | Front (head): " << v[0]
+         << " | Rear (tail): " << v.back() << "\n";
+}
+
+void ConsoleObserver::onQueueInit(const std::vector<int> &elements) {
+    renderQueue(elements, "Queue initialized using Linked List (head & tail).");
+}
+
+void ConsoleObserver::onQueuePush(const std::vector<int> &elements, int val) {
+    renderQueue(elements, string(GREEN) + "push(" + to_string(val) + ") added to tail." + RESET);
+}
+
+void ConsoleObserver::onQueuePop(const std::vector<int> &elements, int removedVal) {
+    renderQueue(elements, string(YELLOW) + "pop() removed " + to_string(removedVal) + " from head." + RESET);
+}
+
+void ConsoleObserver::onQueueUnderflow(const std::vector<int> &elements) {
+    renderQueue(elements, string(RED) + "UNDERFLOW! Queue is already empty." + RESET);
+}
+
+void ConsoleObserver::onQueueFront(const std::vector<int> &elements, int frontVal, bool empty) {
+    if (empty) {
+        renderQueue(elements, string(YELLOW) + "q.empty() is true. No front element." + RESET);
+    } else {
+        renderQueue(elements, string(CYAN) + "q.front() => " + to_string(frontVal) + RESET);
+    }
+}
+
+void ConsoleObserver::onQueueEmptyCheck(const std::vector<int> &elements, bool isEmpty) {
+    if (isEmpty)
+        renderQueue(elements, "q.empty() == true (Queue is empty)");
+    else
+        renderQueue(elements, "q.empty() == false (Size: " + to_string(elements.size()) + ")");
+}
+
+void ConsoleObserver::onQueueClear(const std::vector<int> &elements) {
+    renderQueue(elements, "Queue cleared.");
+}
+
+// ----------------------------------------------------------------------------
+// Linked List Visualizer Helpers & Hooks
+// ----------------------------------------------------------------------------
+static const int OBS_LIST_VISUAL_LIMIT = 6;
+
+void ConsoleObserver::renderList(const std::vector<int> &v, int highlightIdx, const std::string &statusMsg) const {
+    cout << "\n======================================================\n";
+    cout << "         SINGLY LINKED LIST VISUALIZER                \n";
+    cout << "======================================================\n\n";
+
+    if (!statusMsg.empty())
+    {
+        cout << " Status: " << statusMsg << "\n\n";
+    }
+
+    int count = static_cast<int>(v.size());
+
+    if (count == 0)
+    {
+        cout << "  head -> NULL\n";
+        cout << "  tail -> NULL\n";
+        cout << "\n  [ LIST IS EMPTY ]\n";
+        cout << "\n Size: 0 | Head: None | Tail: None\n";
+        return;
+    }
+
+    int visibleCount = (count <= OBS_LIST_VISUAL_LIMIT) ? count : OBS_LIST_VISUAL_LIMIT;
+
+    // Pointer tags line
+    cout << "          head";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_LIST_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_LIST_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << "tail";
+    }
+    cout << "\n";
+
+    // Vertical arrow bars
+    cout << "           |  ";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_LIST_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_LIST_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << " |  ";
+    }
+    cout << "\n";
+
+    // Arrow heads
+    cout << "           v  ";
+    if (count > 1)
+    {
+        int gapSpaces = (count <= OBS_LIST_VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (OBS_LIST_VISUAL_LIMIT - 1) * 14 + 2;
+        cout << string(gapSpaces, ' ') << " v  ";
+    }
+    cout << "\n";
+
+    // Top node borders
+    cout << "  ";
+    for (int i = 0; i < visibleCount; i++)
+    {
+        cout << "+--------+    ";
+    }
+    cout << "\n  ";
+
+    // Node values and arrows
+    for (int i = 0; i < visibleCount; i++)
+    {
+        string valStr = to_string(v[i]);
+        int pad = 6 - static_cast<int>(valStr.length());
+        int padL = (pad > 0) ? pad / 2 : 0;
+        int padR = (pad > 0) ? pad - padL : 0;
+
+        cout << "| " << string(padL, ' ');
+        if (i == highlightIdx)
+        {
+            cout << GREEN << valStr << RESET;
+        }
+        else
+        {
+            cout << CYAN << valStr << RESET;
+        }
+        cout << string(padR, ' ') << " |";
+
+        if (i < count - 1 && i < visibleCount - 1)
+        {
+            cout << " -> ";
+        }
+        else if (i < count - 1 && i == visibleCount - 1)
+        {
+            cout << " -> ...";
+        }
+        else
+        {
+            cout << " -> NULL";
+        }
+    }
+    cout << "\n  ";
+
+    // Bottom node borders
+    for (int i = 0; i < visibleCount; i++)
+    {
+        cout << "+--------+    ";
+    }
+    cout << "\n  ";
+
+    // 0-based indices under each node
+    for (int i = 0; i < visibleCount; i++)
+    {
+        string idxStr = "idx:" + to_string(i);
+        int pad = 8 - static_cast<int>(idxStr.length());
+        int padL = (pad > 0) ? pad / 2 : 0;
+        int padR = (pad > 0) ? pad - padL : 0;
+        cout << " " << string(padL, ' ') << idxStr << string(padR, ' ') << "     ";
+    }
+    cout << "\n";
+
+    cout << "\n Current Size: " << count
+         << " | Head: " << v[0]
+         << " | Tail: " << v.back() << "\n";
+}
+
+void ConsoleObserver::onListInit(const std::vector<int> &elements) {
+    renderList(elements, -1, "Linked List initialized (head & tail).");
+}
+
+void ConsoleObserver::onListPushFront(const std::vector<int> &elements, int val, int highlightIdx) {
+    renderList(elements, highlightIdx, string(GREEN) + "push_front(" + to_string(val) + ") completed." + RESET);
+}
+
+void ConsoleObserver::onListPushBack(const std::vector<int> &elements, int val, int highlightIdx) {
+    renderList(elements, highlightIdx, string(GREEN) + "push_back(" + to_string(val) + ") completed." + RESET);
+}
+
+void ConsoleObserver::onListPopFront(const std::vector<int> &elements, int removedVal) {
+    renderList(elements, -1, string(YELLOW) + "pop_front() removed head node." + RESET);
+}
+
+void ConsoleObserver::onListPopBack(const std::vector<int> &elements, int removedVal) {
+    renderList(elements, -1, string(YELLOW) + "pop_back() removed tail node." + RESET);
+}
+
+void ConsoleObserver::onListUnderflow(const std::vector<int> &elements, const std::string &op) {
+    renderList(elements, -1, string(RED) + "UNDERFLOW! List is empty." + RESET);
+}
+
+void ConsoleObserver::onListSearch(const std::vector<int> &elements, int key, int foundIdx, bool wasEmpty) {
+    if (wasEmpty) {
+        renderList(elements, -1, string(YELLOW) + "List is empty. Cannot search." + RESET);
+    } else if (foundIdx != -1) {
+        renderList(elements, foundIdx, string(GREEN) + "Found " + to_string(key) + " at index " + to_string(foundIdx) + RESET);
+    } else {
+        renderList(elements, -1, string(RED) + "Element " + to_string(key) + " not found in list." + RESET);
+    }
+}
+
+void ConsoleObserver::onListClear(const std::vector<int> &elements) {
+    renderList(elements, -1, "List cleared.");
+}

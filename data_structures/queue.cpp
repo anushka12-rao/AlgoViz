@@ -1,202 +1,151 @@
+#include "queue.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
+#include <vector>
 #include <string>
 #include <limits>
 
 using namespace std;
 
-static const int VISUAL_LIMIT = 6;
+Queue::Queue(IAlgoObserver *obs) : head(nullptr), tail(nullptr), count(0), observer(obs) {}
 
-class Node
-{
-public:
-    int data;
-    Node *next;
-
-    Node(int val)
-    {
-        data = val;
-        next = NULL;
-    }
-};
-
-class Queue
-{
-    Node *head; // front
-    Node *tail; // rear
-    int count;
-
-public:
-    Queue()
-    {
-        head = tail = NULL;
-        count = 0;
-    }
-
-    ~Queue()
-    {
-        clear();
-    }
-
-    void push(int data)
-    {
-        Node *newNode = new Node(data);
-        if (empty())
-        {
-            head = tail = newNode;
-        }
-        else
-        {
-            tail->next = newNode;
-            tail = newNode;
-        }
-        count++;
-    }
-
-    void pop()
-    {
-        if (empty())
-        {
-            return;
-        }
+Queue::~Queue() {
+    while (!empty()) {
         Node *temp = head;
         head = head->next;
-        if (head == NULL)
-        {
-            tail = NULL;
+        delete temp;
+    }
+    tail = nullptr;
+    count = 0;
+}
+
+void Queue::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
+
+IAlgoObserver* Queue::getObserver() const {
+    return observer;
+}
+
+void Queue::push(int data) {
+    Node *newNode = new Node(data);
+    if (empty()) {
+        head = tail = newNode;
+    } else {
+        tail->next = newNode;
+        tail = newNode;
+    }
+    count++;
+    if (observer) {
+        observer->onQueuePush(toVector(), data);
+    }
+}
+
+bool Queue::pop() {
+    int dummy;
+    return pop(dummy);
+}
+
+bool Queue::pop(int &removedVal) {
+    if (empty()) {
+        if (observer) {
+            observer->onQueueUnderflow(toVector());
+        }
+        return false;
+    }
+    Node *temp = head;
+    removedVal = head->data;
+    head = head->next;
+    if (head == nullptr) {
+        tail = nullptr;
+    }
+    delete temp;
+    count--;
+    if (observer) {
+        observer->onQueuePop(toVector(), removedVal);
+    }
+    return true;
+}
+
+int Queue::front() const {
+    if (empty()) {
+        return -1;
+    }
+    return head->data;
+}
+
+int Queue::rear() const {
+    if (empty()) {
+        return -1;
+    }
+    return tail->data;
+}
+
+bool Queue::empty() const {
+    return head == nullptr;
+}
+
+int Queue::size() const {
+    return count;
+}
+
+void Queue::clear() {
+    while (!empty()) {
+        Node *temp = head;
+        head = head->next;
+        if (head == nullptr) {
+            tail = nullptr;
         }
         delete temp;
         count--;
     }
+    if (observer) {
+        observer->onQueueClear(toVector());
+    }
+}
 
-    int front() const
-    {
-        if (empty())
-        {
-            return -1;
+void Queue::notifyInit() {
+    if (observer) {
+        observer->onQueueInit(toVector());
+    }
+}
+
+void Queue::notifyFront() {
+    if (empty()) {
+        if (observer) {
+            observer->onQueueFront(toVector(), -1, true);
         }
-        return head->data;
-    }
-
-    bool empty() const
-    {
-        return head == NULL;
-    }
-
-    int size() const
-    {
-        return count;
-    }
-
-    void clear()
-    {
-        while (!empty())
-        {
-            pop();
+    } else {
+        if (observer) {
+            observer->onQueueFront(toVector(), head->data, false);
         }
     }
+}
 
-    void render(const string &statusMsg = "") const
-    {
-        cout << "\n======================================================\n";
-        cout << "           QUEUE VISUALIZER (FIFO - LINKED LIST)      \n";
-        cout << "======================================================\n\n";
-
-        if (!statusMsg.empty())
-        {
-            cout << " Status: " << statusMsg << "\n\n";
-        }
-
-        if (empty())
-        {
-            cout << "  head -> NULL\n";
-            cout << "  tail -> NULL\n";
-            cout << "\n  [ QUEUE IS EMPTY ]\n";
-            cout << "\n Current Size: 0 | Front: None | Rear: None\n";
-            return;
-        }
-
-        int visibleCount = (count <= VISUAL_LIMIT) ? count : VISUAL_LIMIT;
-
-        // Pointer indicators
-        cout << "          head";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << "tail";
-        }
-        cout << "\n";
-
-        // Downward arrows
-        cout << "           |  ";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << " |  ";
-        }
-        cout << "\n";
-
-        cout << "           v  ";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << " v  ";
-        }
-        cout << "\n";
-
-        // Top borders
-        cout << "  ";
-        for (int i = 0; i < visibleCount; i++)
-        {
-            cout << "+--------+    ";
-        }
-        cout << "\n  ";
-
-        // Cell values
-        Node *curr = head;
-        for (int i = 0; i < visibleCount; i++)
-        {
-            string valStr = to_string(curr->data);
-            int pad = 6 - static_cast<int>(valStr.length());
-            int padL = (pad > 0) ? pad / 2 : 0;
-            int padR = (pad > 0) ? pad - padL : 0;
-
-            cout << "| " << string(padL, ' ') << CYAN << valStr << RESET << string(padR, ' ') << " |";
-            if (curr->next != NULL && i < visibleCount - 1)
-            {
-                cout << " -> ";
-            }
-            else if (curr->next != NULL && i == visibleCount - 1)
-            {
-                cout << " -> ...";
-            }
-            else
-            {
-                cout << " -> NULL";
-            }
-            curr = curr->next;
-        }
-        cout << "\n  ";
-
-        // Bottom borders
-        for (int i = 0; i < visibleCount; i++)
-        {
-            cout << "+--------+    ";
-        }
-        cout << "\n";
-
-        cout << "\n Current Size: " << count
-             << " | Front (head): " << head->data
-             << " | Rear (tail): " << tail->data << "\n";
+void Queue::notifyEmptyCheck() {
+    if (observer) {
+        observer->onQueueEmptyCheck(toVector(), empty());
     }
-};
+}
+
+vector<int> Queue::toVector() const {
+    vector<int> res;
+    Node *curr = head;
+    while (curr != nullptr) {
+        res.push_back(curr->data);
+        curr = curr->next;
+    }
+    return res;
+}
 
 void queueVisualizer()
 {
-    Queue q;
-    int choice = -1; // Must be int to match case 1, case 2, etc.
+    ConsoleObserver obs(true);
+    Queue q(&obs);
+    int choice = -1;
 
-    q.render("Queue initialized using Linked List (head & tail).");
+    q.notifyInit();
 
     while (choice != 0)
     {
@@ -233,45 +182,33 @@ void queueVisualizer()
             }
 
             q.push(val);
-            q.render(string(GREEN) + "push(" + to_string(val) + ") added to tail." + RESET);
             break;
         }
         case 2:
         {
             if (q.empty())
             {
-                q.render(string(RED) + "UNDERFLOW! Queue is already empty." + RESET);
+                int dummy;
+                q.pop(dummy); // triggers onQueueUnderflow
                 break;
             }
-            int removed = q.front();
-            q.pop();
-            q.render(string(YELLOW) + "pop() removed " + to_string(removed) + " from head." + RESET);
+            int removed;
+            q.pop(removed);
             break;
         }
         case 3:
         {
-            if (q.empty())
-            {
-                q.render(string(YELLOW) + "q.empty() is true. No front element." + RESET);
-            }
-            else
-            {
-                q.render(string(CYAN) + "q.front() => " + to_string(q.front()) + RESET);
-            }
+            q.notifyFront();
             break;
         }
         case 4:
         {
-            if (q.empty())
-                q.render("q.empty() == true (Queue is empty)");
-            else
-                q.render("q.empty() == false (Size: " + to_string(q.size()) + ")");
+            q.notifyEmptyCheck();
             break;
         }
         case 5:
         {
             q.clear();
-            q.render("Queue cleared.");
             break;
         }
         case 0:

@@ -1,3 +1,5 @@
+#include "stack.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -6,131 +8,111 @@
 
 using namespace std;
 
-static const int MAX_CAPACITY = 7;
+Stack::Stack(IAlgoObserver *obs) : observer(obs) {
+    // Reserve memory upfront to avoid dynamic reallocations
+    v.reserve(STACK_MAX_CAPACITY);
+}
 
-class Stack
-{
-    vector<int> v;
+void Stack::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
 
-public:
-    Stack()
-    {
-        // Reserve memory upfront to avoid dynamic reallocations
-        v.reserve(MAX_CAPACITY);
+IAlgoObserver* Stack::getObserver() const {
+    return observer;
+}
+
+bool Stack::push(int val) {
+    if (v.size() >= STACK_MAX_CAPACITY) {
+        if (observer) {
+            observer->onStackOverflow(v);
+        }
+        return false;
     }
-
-    // O(1) - Push element
-    void push(int val)
-    {
-        v.push_back(val);
+    v.push_back(val);
+    if (observer) {
+        observer->onStackPush(v, val, static_cast<int>(v.size()) - 1);
     }
+    return true;
+}
 
-    // O(1) - Pop element
-    void pop()
-    {
-        if (!empty())
-        {
-            v.pop_back();
+bool Stack::pop() {
+    int dummy;
+    return pop(dummy);
+}
+
+bool Stack::pop(int &poppedVal) {
+    if (v.empty()) {
+        if (observer) {
+            observer->onStackUnderflow(v);
+        }
+        return false;
+    }
+    poppedVal = v.back();
+    v.pop_back();
+    if (observer) {
+        observer->onStackPop(v, poppedVal);
+    }
+    return true;
+}
+
+int Stack::top() const {
+    if (empty()) {
+        return -1;
+    }
+    return v.back();
+}
+
+void Stack::notifyTop() {
+    if (empty()) {
+        if (observer) {
+            observer->onStackTop(v, -1, -1, true);
+        }
+    } else {
+        if (observer) {
+            observer->onStackTop(v, v.back(), static_cast<int>(v.size()) - 1, false);
         }
     }
+}
 
-    // O(1) - Peek top element
-    int top() const
-    {
-        if (empty())
-            return -1;
-        return v[v.size() - 1];
+bool Stack::empty() const {
+    return v.empty();
+}
+
+void Stack::notifyEmptyCheck() {
+    if (observer) {
+        observer->onStackEmptyCheck(v, v.empty());
     }
+}
 
-    // O(1) - Check if empty
-    bool empty() const
-    {
-        return v.empty();
+int Stack::size() const {
+    return static_cast<int>(v.size());
+}
+
+void Stack::clear() {
+    v.clear();
+    if (observer) {
+        observer->onStackClear(v);
     }
+}
 
-    // O(1) - Current size
-    int size() const
-    {
-        return static_cast<int>(v.size());
+void Stack::notifyInit() {
+    if (observer) {
+        observer->onStackInit(v);
     }
+}
 
-    // O(1) - Reset stack
-    void clear()
-    {
-        v.clear();
-    }
-
-    // Visual ASCII rendering
-    void render(int highlightIndex = -1, const string &statusMsg = "") const
-    {
-        cout << "\n========================================\n";
-        cout << "           STACK VISUALIZER (LIFO)      \n";
-        cout << "========================================\n\n";
-
-        if (!statusMsg.empty())
-        {
-            cout << " Status: " << statusMsg << "\n\n";
-        }
-
-        if (v.empty())
-        {
-            cout << "       |          |\n";
-            cout << "       |  (EMPTY) |\n";
-            cout << "       +----------+\n";
-            cout << "        STACK BASE \n";
-            cout << "\n Size: 0 / " << MAX_CAPACITY << " | Top Index: -1\n";
-            return;
-        }
-
-        // Render remaining empty headroom slots
-        for (int i = MAX_CAPACITY - 1; i >= static_cast<int>(v.size()); i--)
-        {
-            cout << "       |          |\n";
-        }
-
-        // Render stored vector elements from top (v.size() - 1) down to index 0
-        for (int i = static_cast<int>(v.size()) - 1; i >= 0; i--)
-        {
-            bool isTop = (i == static_cast<int>(v.size()) - 1);
-            bool isHighlighted = (i == highlightIndex);
-
-            if (isTop)
-                cout << " top-> ";
-            else
-                cout << "       ";
-
-            cout << "+----------+\n";
-            cout << "       |";
-
-            // Format cell interior to exact 10-character box width
-            string valStr = "[" + to_string(v[i]) + "]";
-            int padLeft = (10 - static_cast<int>(valStr.length())) / 2;
-            int padRight = 10 - static_cast<int>(valStr.length()) - padLeft;
-
-            cout << string(padLeft, ' ');
-            if (isHighlighted)
-                cout << GREEN << valStr << RESET;
-            else if (isTop)
-                cout << CYAN << valStr << RESET;
-            else
-                cout << valStr;
-            cout << string(padRight, ' ') << "|\n";
-        }
-
-        cout << "       +----------+\n";
-        cout << "        STACK BASE \n";
-        cout << "\n Current Size: " << v.size() << " / " << MAX_CAPACITY
-             << " | Top Index: " << static_cast<int>(v.size()) - 1 << "\n";
-    }
-};
+const vector<int>& Stack::getElements() const {
+    return v;
+}
 
 // Main visualizer loop integrated with AlgoViz
 void stackVisualizer()
 {
-    Stack s;
+    ConsoleObserver obs(true);
+    Stack s(&obs);
     int choice = -1;
 
-    s.render(-1, "Stack initialized using vector<int> v.");
+    s.notifyInit();
 
     while (choice != 0)
     {
@@ -159,9 +141,9 @@ void stackVisualizer()
         {
         case 1:
         {
-            if (s.size() >= MAX_CAPACITY)
+            if (s.size() >= STACK_MAX_CAPACITY)
             {
-                s.render(-1, string(RED) + "OVERFLOW! Cannot push beyond MAX_CAPACITY." + RESET);
+                s.push(0); // triggers onStackOverflow
                 break;
             }
             int val;
@@ -177,45 +159,33 @@ void stackVisualizer()
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             s.push(val);
-            s.render(s.size() - 1, string(GREEN) + "push(" + to_string(val) + ") complete." + RESET);
             break;
         }
         case 2:
         {
             if (s.empty())
             {
-                s.render(-1, string(RED) + "UNDERFLOW! Cannot pop from empty stack." + RESET);
+                int dummy;
+                s.pop(dummy); // triggers onStackUnderflow
                 break;
             }
-            int poppedVal = s.top();
-            s.pop();
-            s.render(-1, string(YELLOW) + "pop() removed " + to_string(poppedVal) + RESET);
+            int poppedVal;
+            s.pop(poppedVal);
             break;
         }
         case 3:
         {
-            if (s.empty())
-            {
-                s.render(-1, string(YELLOW) + "s.empty() is true. No top element." + RESET);
-            }
-            else
-            {
-                s.render(s.size() - 1, string(CYAN) + "s.top() => " + to_string(s.top()) + RESET);
-            }
+            s.notifyTop();
             break;
         }
         case 4:
         {
-            if (s.empty())
-                s.render(-1, "s.empty() == true (Stack is empty)");
-            else
-                s.render(-1, "s.empty() == false (Size: " + to_string(s.size()) + ")");
+            s.notifyEmptyCheck();
             break;
         }
         case 5:
         {
             s.clear();
-            s.render(-1, "Stack cleared.");
             break;
         }
         case 0:

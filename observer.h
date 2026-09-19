@@ -93,6 +93,35 @@ public:
     virtual void onBinarySearchSmaller(const std::vector<int> &arr, int mid, int target, int midVal) {}
     virtual void onBinarySearchMatch(const std::vector<int> &arr, int mid, int target, int midVal) {}
     virtual void onBinarySearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) {}
+
+    // Stack specific hooks
+    virtual void onStackInit(const std::vector<int> &elements) {}
+    virtual void onStackPush(const std::vector<int> &elements, int val, int highlightIdx) {}
+    virtual void onStackOverflow(const std::vector<int> &elements) {}
+    virtual void onStackPop(const std::vector<int> &elements, int poppedVal) {}
+    virtual void onStackUnderflow(const std::vector<int> &elements) {}
+    virtual void onStackTop(const std::vector<int> &elements, int topVal, int highlightIdx, bool empty) {}
+    virtual void onStackEmptyCheck(const std::vector<int> &elements, bool isEmpty) {}
+    virtual void onStackClear(const std::vector<int> &elements) {}
+
+    // Queue specific hooks
+    virtual void onQueueInit(const std::vector<int> &elements) {}
+    virtual void onQueuePush(const std::vector<int> &elements, int val) {}
+    virtual void onQueuePop(const std::vector<int> &elements, int removedVal) {}
+    virtual void onQueueUnderflow(const std::vector<int> &elements) {}
+    virtual void onQueueFront(const std::vector<int> &elements, int frontVal, bool empty) {}
+    virtual void onQueueEmptyCheck(const std::vector<int> &elements, bool isEmpty) {}
+    virtual void onQueueClear(const std::vector<int> &elements) {}
+
+    // Linked list specific hooks
+    virtual void onListInit(const std::vector<int> &elements) {}
+    virtual void onListPushFront(const std::vector<int> &elements, int val, int highlightIdx) {}
+    virtual void onListPushBack(const std::vector<int> &elements, int val, int highlightIdx) {}
+    virtual void onListPopFront(const std::vector<int> &elements, int removedVal) {}
+    virtual void onListPopBack(const std::vector<int> &elements, int removedVal) {}
+    virtual void onListUnderflow(const std::vector<int> &elements, const std::string &op) {}
+    virtual void onListSearch(const std::vector<int> &elements, int key, int foundIdx, bool wasEmpty) {}
+    virtual void onListClear(const std::vector<int> &elements) {}
 };
 
 // ConsoleObserver: Renders existing terminal output and handles Sleep / waitForEnter
@@ -168,4 +197,38 @@ public:
     void onBinarySearchSmaller(const std::vector<int> &arr, int mid, int target, int midVal) override;
     void onBinarySearchMatch(const std::vector<int> &arr, int mid, int target, int midVal) override;
     void onBinarySearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) override;
+
+    // Stack hooks
+    void onStackInit(const std::vector<int> &elements) override;
+    void onStackPush(const std::vector<int> &elements, int val, int highlightIdx) override;
+    void onStackOverflow(const std::vector<int> &elements) override;
+    void onStackPop(const std::vector<int> &elements, int poppedVal) override;
+    void onStackUnderflow(const std::vector<int> &elements) override;
+    void onStackTop(const std::vector<int> &elements, int topVal, int highlightIdx, bool empty) override;
+    void onStackEmptyCheck(const std::vector<int> &elements, bool isEmpty) override;
+    void onStackClear(const std::vector<int> &elements) override;
+
+    // Queue hooks
+    void onQueueInit(const std::vector<int> &elements) override;
+    void onQueuePush(const std::vector<int> &elements, int val) override;
+    void onQueuePop(const std::vector<int> &elements, int removedVal) override;
+    void onQueueUnderflow(const std::vector<int> &elements) override;
+    void onQueueFront(const std::vector<int> &elements, int frontVal, bool empty) override;
+    void onQueueEmptyCheck(const std::vector<int> &elements, bool isEmpty) override;
+    void onQueueClear(const std::vector<int> &elements) override;
+
+    // Linked list hooks
+    void onListInit(const std::vector<int> &elements) override;
+    void onListPushFront(const std::vector<int> &elements, int val, int highlightIdx) override;
+    void onListPushBack(const std::vector<int> &elements, int val, int highlightIdx) override;
+    void onListPopFront(const std::vector<int> &elements, int removedVal) override;
+    void onListPopBack(const std::vector<int> &elements, int removedVal) override;
+    void onListUnderflow(const std::vector<int> &elements, const std::string &op) override;
+    void onListSearch(const std::vector<int> &elements, int key, int foundIdx, bool wasEmpty) override;
+    void onListClear(const std::vector<int> &elements) override;
+
+    // Terminal renderers
+    void renderStack(const std::vector<int> &v, int highlightIndex = -1, const std::string &statusMsg = "") const;
+    void renderQueue(const std::vector<int> &v, const std::string &statusMsg = "") const;
+    void renderList(const std::vector<int> &v, int highlightIdx = -1, const std::string &statusMsg = "") const;
 };

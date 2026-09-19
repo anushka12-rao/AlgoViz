@@ -1,282 +1,206 @@
+#include "linked_list.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
+#include <vector>
 #include <string>
 #include <limits>
 
 using namespace std;
 
-static const int VISUAL_LIMIT = 6;
+List::List(IAlgoObserver *obs) : head(nullptr), tail(nullptr), count(0), observer(obs) {}
 
-// Node definition matching reference
-class Node
-{
-public:
-    int data;
-    Node *next;
-
-    Node(int val)
-    {
-        data = val;
-        next = NULL;
-    }
-};
-
-// Singly Linked List class matching reference terminology
-class List
-{
-    Node *head;
-    Node *tail;
-    int count; // O(1) size tracking
-
-public:
-    List()
-    {
-        head = tail = NULL;
-        count = 0;
-    }
-
-    ~List()
-    {
-        clear();
-    }
-
-    // O(1) - Insert at beginning
-    void push_front(int val)
-    {
-        Node *newNode = new Node(val);
-        if (head == NULL)
-        {
-            head = tail = newNode;
-        }
-        else
-        {
-            newNode->next = head;
-            head = newNode;
-        }
-        count++;
-    }
-
-    // O(1) - Insert at end
-    void push_back(int val)
-    {
-        Node *newNode = new Node(val);
-        if (head == NULL)
-        {
-            head = tail = newNode;
-        }
-        else
-        {
-            tail->next = newNode;
-            tail = newNode;
-        }
-        count++;
-    }
-
-    // O(1) - Delete from beginning
-    void pop_front()
-    {
-        if (head == NULL)
-        {
-            return;
-        }
+List::~List() {
+    while (head != nullptr) {
         Node *temp = head;
         head = head->next;
-        temp->next = NULL;
+        temp->next = nullptr;
         delete temp;
-        count--;
-        if (head == NULL)
-        {
-            tail = NULL;
+    }
+    tail = nullptr;
+    count = 0;
+}
+
+void List::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
+
+IAlgoObserver* List::getObserver() const {
+    return observer;
+}
+
+void List::push_front(int val) {
+    Node *newNode = new Node(val);
+    if (head == nullptr) {
+        head = tail = newNode;
+    } else {
+        newNode->next = head;
+        head = newNode;
+    }
+    count++;
+    if (observer) {
+        observer->onListPushFront(toVector(), val, 0);
+    }
+}
+
+void List::push_back(int val) {
+    Node *newNode = new Node(val);
+    if (head == nullptr) {
+        head = tail = newNode;
+    } else {
+        tail->next = newNode;
+        tail = newNode;
+    }
+    count++;
+    if (observer) {
+        observer->onListPushBack(toVector(), val, count - 1);
+    }
+}
+
+bool List::pop_front() {
+    int dummy;
+    return pop_front(dummy);
+}
+
+bool List::pop_front(int &removedVal) {
+    if (head == nullptr) {
+        if (observer) {
+            observer->onListUnderflow(toVector(), "pop_front");
         }
+        return false;
+    }
+    Node *temp = head;
+    removedVal = head->data;
+    head = head->next;
+    temp->next = nullptr;
+    delete temp;
+    count--;
+    if (head == nullptr) {
+        tail = nullptr;
+    }
+    if (observer) {
+        observer->onListPopFront(toVector(), removedVal);
+    }
+    return true;
+}
+
+bool List::pop_back() {
+    int dummy;
+    return pop_back(dummy);
+}
+
+bool List::pop_back(int &removedVal) {
+    if (head == nullptr) {
+        if (observer) {
+            observer->onListUnderflow(toVector(), "pop_back");
+        }
+        return false;
+    }
+    if (head == tail) {
+        removedVal = head->data;
+        delete head;
+        head = tail = nullptr;
+        count = 0;
+        if (observer) {
+            observer->onListPopBack(toVector(), removedVal);
+        }
+        return true;
     }
 
-    // O(N) - Delete from end
-    void pop_back()
-    {
-        if (head == NULL)
-        {
-            return;
-        }
-        if (head == tail)
-        {
-            delete head;
-            head = tail = NULL;
-            count = 0;
-            return;
-        }
+    Node *temp = head;
+    while (temp->next != tail) {
+        temp = temp->next;
+    }
+    removedVal = tail->data;
+    temp->next = nullptr;
+    delete tail;
+    tail = temp;
+    count--;
+    if (observer) {
+        observer->onListPopBack(toVector(), removedVal);
+    }
+    return true;
+}
 
+int List::search(int key) const {
+    Node *temp = head;
+    int idx = 0;
+    while (temp != nullptr) {
+        if (temp->data == key) {
+            return idx;
+        }
+        temp = temp->next;
+        idx++;
+    }
+    return -1;
+}
+
+void List::notifySearch(int key) {
+    if (empty()) {
+        if (observer) {
+            observer->onListSearch(toVector(), key, -1, true);
+        }
+        return;
+    }
+    int idx = search(key);
+    if (observer) {
+        observer->onListSearch(toVector(), key, idx, false);
+    }
+}
+
+bool List::empty() const {
+    return head == nullptr;
+}
+
+int List::size() const {
+    return count;
+}
+
+int List::getHeadVal() const {
+    return head ? head->data : -1;
+}
+
+int List::getTailVal() const {
+    return tail ? tail->data : -1;
+}
+
+void List::clear() {
+    while (head != nullptr) {
         Node *temp = head;
-        while (temp->next != tail)
-        {
-            temp = temp->next;
-        }
-
-        temp->next = NULL;
-        delete tail;
-        tail = temp;
-        count--;
+        head = head->next;
+        temp->next = nullptr;
+        delete temp;
     }
-
-    // O(N) - Linear search returning 0-based index (-1 if not found)
-    int search(int key) const
-    {
-        Node *temp = head;
-        int idx = 0;
-        while (temp != NULL)
-        {
-            if (temp->data == key)
-            {
-                return idx;
-            }
-            temp = temp->next;
-            idx++;
-        }
-        return -1;
+    tail = nullptr;
+    count = 0;
+    if (observer) {
+        observer->onListClear(toVector());
     }
+}
 
-    bool empty() const
-    {
-        return head == NULL;
+void List::notifyInit() {
+    if (observer) {
+        observer->onListInit(toVector());
     }
+}
 
-    int size() const
-    {
-        return count;
+vector<int> List::toVector() const {
+    vector<int> res;
+    Node *curr = head;
+    while (curr != nullptr) {
+        res.push_back(curr->data);
+        curr = curr->next;
     }
+    return res;
+}
 
-    void clear()
-    {
-        while (head != NULL)
-        {
-            pop_front();
-        }
-    }
-
-    // Terminal ASCII Renderer
-    void render(int highlightIdx = -1, const string &statusMsg = "") const
-    {
-        cout << "\n======================================================\n";
-        cout << "         SINGLY LINKED LIST VISUALIZER                \n";
-        cout << "======================================================\n\n";
-
-        if (!statusMsg.empty())
-        {
-            cout << " Status: " << statusMsg << "\n\n";
-        }
-
-        if (empty())
-        {
-            cout << "  head -> NULL\n";
-            cout << "  tail -> NULL\n";
-            cout << "\n  [ LIST IS EMPTY ]\n";
-            cout << "\n Size: 0 | Head: None | Tail: None\n";
-            return;
-        }
-
-        int visibleCount = (count <= VISUAL_LIMIT) ? count : VISUAL_LIMIT;
-
-        // Pointer tags line
-        cout << "          head";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << "tail";
-        }
-        cout << "\n";
-
-        // Vertical arrow bars
-        cout << "           |  ";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << " |  ";
-        }
-        cout << "\n";
-
-        // Arrow heads
-        cout << "           v  ";
-        if (count > 1)
-        {
-            int gapSpaces = (count <= VISUAL_LIMIT) ? (count - 2) * 14 + 10 : (VISUAL_LIMIT - 1) * 14 + 2;
-            cout << string(gapSpaces, ' ') << " v  ";
-        }
-        cout << "\n";
-
-        // Top node borders
-        cout << "  ";
-        for (int i = 0; i < visibleCount; i++)
-        {
-            cout << "+--------+    ";
-        }
-        cout << "\n  ";
-
-        // Node values and arrows
-        Node *curr = head;
-        for (int i = 0; i < visibleCount; i++)
-        {
-            string valStr = to_string(curr->data);
-            int pad = 6 - static_cast<int>(valStr.length());
-            int padL = (pad > 0) ? pad / 2 : 0;
-            int padR = (pad > 0) ? pad - padL : 0;
-
-            cout << "| " << string(padL, ' ');
-            if (i == highlightIdx)
-            {
-                cout << GREEN << valStr << RESET;
-            }
-            else
-            {
-                cout << CYAN << valStr << RESET;
-            }
-            cout << string(padR, ' ') << " |";
-
-            if (curr->next != NULL && i < visibleCount - 1)
-            {
-                cout << " -> ";
-            }
-            else if (curr->next != NULL && i == visibleCount - 1)
-            {
-                cout << " -> ...";
-            }
-            else
-            {
-                cout << " -> NULL";
-            }
-            curr = curr->next;
-        }
-        cout << "\n  ";
-
-        // Bottom node borders
-        for (int i = 0; i < visibleCount; i++)
-        {
-            cout << "+--------+    ";
-        }
-        cout << "\n  ";
-
-        // 0-based indices under each node
-        for (int i = 0; i < visibleCount; i++)
-        {
-            string idxStr = "idx:" + to_string(i);
-            int pad = 8 - static_cast<int>(idxStr.length());
-            int padL = (pad > 0) ? pad / 2 : 0;
-            int padR = (pad > 0) ? pad - padL : 0;
-            cout << " " << string(padL, ' ') << idxStr << string(padR, ' ') << "     ";
-        }
-        cout << "\n";
-
-        cout << "\n Current Size: " << count
-             << " | Head: " << head->data
-             << " | Tail: " << tail->data << "\n";
-    }
-};
-
-// Coordinator loop for AlgoViz
 void linkedListVisualizer()
 {
-    List l;
+    ConsoleObserver obs(true);
+    List l(&obs);
     int choice = -1;
 
-    l.render(-1, "Linked List initialized (head & tail).");
+    l.notifyInit();
 
     while (choice != 0)
     {
@@ -316,7 +240,6 @@ void linkedListVisualizer()
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             l.push_front(val);
-            l.render(0, string(GREEN) + "push_front(" + to_string(val) + ") completed." + RESET);
             break;
         }
         case 2:
@@ -332,36 +255,25 @@ void linkedListVisualizer()
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             l.push_back(val);
-            l.render(l.size() - 1, string(GREEN) + "push_back(" + to_string(val) + ") completed." + RESET);
             break;
         }
         case 3:
         {
-            if (l.empty())
-            {
-                l.render(-1, string(RED) + "UNDERFLOW! List is empty." + RESET);
-                break;
-            }
-            l.pop_front();
-            l.render(-1, string(YELLOW) + "pop_front() removed head node." + RESET);
+            int dummy;
+            l.pop_front(dummy); // triggers onListUnderflow or onListPopFront
             break;
         }
         case 4:
         {
-            if (l.empty())
-            {
-                l.render(-1, string(RED) + "UNDERFLOW! List is empty." + RESET);
-                break;
-            }
-            l.pop_back();
-            l.render(-1, string(YELLOW) + "pop_back() removed tail node." + RESET);
+            int dummy;
+            l.pop_back(dummy); // triggers onListUnderflow or onListPopBack
             break;
         }
         case 5:
         {
             if (l.empty())
             {
-                l.render(-1, string(YELLOW) + "List is empty. Cannot search." + RESET);
+                l.notifySearch(0);
                 break;
             }
             int key;
@@ -374,21 +286,12 @@ void linkedListVisualizer()
             }
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-            int idx = l.search(key);
-            if (idx != -1)
-            {
-                l.render(idx, string(GREEN) + "Found " + to_string(key) + " at index " + to_string(idx) + RESET);
-            }
-            else
-            {
-                l.render(-1, string(RED) + "Element " + to_string(key) + " not found in list." + RESET);
-            }
+            l.notifySearch(key);
             break;
         }
         case 6:
         {
             l.clear();
-            l.render(-1, "List cleared.");
             break;
         }
         case 0:
