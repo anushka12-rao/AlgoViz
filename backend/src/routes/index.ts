@@ -1,0 +1,12 @@
+import { Router, Request, Response } from 'express';
+import { SERVICE_NAME } from '../config/constants';
+
+export const apiRouter = Router();
+
+apiRouter.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    service: SERVICE_NAME,
+    status: 'ok',
+  });
+});
