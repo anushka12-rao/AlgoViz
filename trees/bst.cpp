@@ -1,3 +1,5 @@
+﻿#include "bst.h"
+#include "../observer.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -8,263 +10,267 @@
 
 using namespace std;
 
-// ============================================================================
-// BST Node Definition
-// ============================================================================
-class BSTNode
-{
-public:
-    int data;       // Numerical value stored in the node
-    BSTNode *left;  // Pointer to left child (strictly smaller values)
-    BSTNode *right; // Pointer to right child (strictly greater values)
+BST::BST(IAlgoObserver *obs) : root(nullptr), nodeCount(0), observer(obs) {}
 
-    BSTNode(int val)
-    {
-        data = val;
-        left = NULL;
-        right = NULL;
-    }
-};
+BST::~BST() {
+    clearHelper(root);
+    root = nullptr;
+    nodeCount = 0;
+}
 
-// ============================================================================
-// Binary Search Tree Class
-// ============================================================================
-class BST
-{
-    BSTNode *root; // Top-most node
-    int count;     // Exact node count
+void BST::setObserver(IAlgoObserver *obs) {
+    observer = obs;
+}
 
-    // Helper: Recursive Insertion
-    BSTNode *insertHelper(BSTNode *node, int val, bool &inserted)
-    {
-        if (node == NULL)
-        {
-            inserted = true;
-            count++;
-            return new BSTNode(val);
-        }
+IAlgoObserver* BST::getObserver() const {
+    return observer;
+}
 
-        if (val < node->data)
-        {
-            node->left = insertHelper(node->left, val, inserted);
-        }
-        else if (val > node->data)
-        {
-            node->right = insertHelper(node->right, val, inserted);
-        }
-        else
-        {
-            inserted = false; // Duplicate rejected
-        }
-        return node;
+BST::BSTNode* BST::insertHelper(BSTNode *node, int val, bool &inserted) {
+    if (node == nullptr) {
+        inserted = true;
+        nodeCount++;
+        return new BSTNode(val);
     }
 
-    // Helper: Search with decision trace
-    bool searchHelper(BSTNode *node, int val, vector<string> &path) const
-    {
-        if (node == NULL)
-            return false;
+    if (val < node->data) {
+        node->left = insertHelper(node->left, val, inserted);
+    } else if (val > node->data) {
+        node->right = insertHelper(node->right, val, inserted);
+    } else {
+        inserted = false; // Duplicate rejected
+    }
+    return node;
+}
 
-        path.push_back("[" + to_string(node->data) + "]");
-        if (node->data == val)
-            return true;
+bool BST::searchHelper(BSTNode *node, int val, vector<string> &path) const {
+    if (node == nullptr)
+        return false;
 
-        if (val < node->data)
-        {
-            path.push_back("Go Left (< " + to_string(node->data) + ")");
-            return searchHelper(node->left, val, path);
+    path.push_back("[" + to_string(node->data) + "]");
+    if (node->data == val)
+        return true;
+
+    if (val < node->data) {
+        path.push_back("Go Left (< " + to_string(node->data) + ")");
+        return searchHelper(node->left, val, path);
+    } else {
+        path.push_back("Go Right (> " + to_string(node->data) + ")");
+        return searchHelper(node->right, val, path);
+    }
+}
+
+BST::BSTNode* BST::findMin(BSTNode *node) const {
+    while (node != nullptr && node->left != nullptr) {
+        node = node->left;
+    }
+    return node;
+}
+
+BST::BSTNode* BST::deleteHelper(BSTNode *node, int val, bool &deleted) {
+    if (node == nullptr) {
+        deleted = false;
+        return nullptr;
+    }
+
+    if (val < node->data) {
+        node->left = deleteHelper(node->left, val, deleted);
+    } else if (val > node->data) {
+        node->right = deleteHelper(node->right, val, deleted);
+    } else {
+        deleted = true;
+
+        if (node->left == nullptr) {
+            BSTNode *temp = node->right;
+            delete node;
+            nodeCount--;
+            return temp;
+        } else if (node->right == nullptr) {
+            BSTNode *temp = node->left;
+            delete node;
+            nodeCount--;
+            return temp;
         }
-        else
-        {
-            path.push_back("Go Right (> " + to_string(node->data) + ")");
-            return searchHelper(node->right, val, path);
+
+        BSTNode *successor = findMin(node->right);
+        node->data = successor->data;
+        node->right = deleteHelper(node->right, successor->data, deleted);
+    }
+    return node;
+}
+
+void BST::inorderHelper(BSTNode *node, vector<int> &res) const {
+    if (node == nullptr)
+        return;
+    inorderHelper(node->left, res);
+    res.push_back(node->data);
+    inorderHelper(node->right, res);
+}
+
+void BST::clearHelper(BSTNode *node) {
+    if (node == nullptr)
+        return;
+    clearHelper(node->left);
+    clearHelper(node->right);
+    delete node;
+}
+
+void BST::snapshotHelper(BSTNode *node, vector<TreeNodeRecord> &nodes) const {
+    if (node == nullptr)
+        return;
+    int curId = static_cast<int>(nodes.size());
+    nodes.push_back(TreeNodeRecord(curId, node->data, -1, -1));
+    if (node->left) {
+        nodes[curId].left_id = static_cast<int>(nodes.size());
+        snapshotHelper(node->left, nodes);
+    }
+    if (node->right) {
+        nodes[curId].right_id = static_cast<int>(nodes.size());
+        snapshotHelper(node->right, nodes);
+    }
+}
+
+bool BST::insert(int val) {
+    bool inserted = false;
+    root = insertHelper(root, val, inserted);
+    return inserted;
+}
+
+int BST::insertBatch(const vector<int> &values, int &duplicateCount) {
+    int addedCount = 0;
+    duplicateCount = 0;
+
+    for (int val : values) {
+        if (insert(val)) {
+            addedCount++;
+        } else {
+            duplicateCount++;
         }
     }
 
-    // Helper: Minimum node in subtree (In-Order Successor)
-    BSTNode *findMin(BSTNode *node) const
-    {
-        while (node != NULL && node->left != NULL)
-        {
-            node = node->left;
-        }
-        return node;
+    notifyInsertBatch(values, addedCount, duplicateCount);
+    return addedCount;
+}
+
+bool BST::search(int val, vector<string> &path) const {
+    return searchHelper(root, val, path);
+}
+
+bool BST::remove(int val) {
+    bool deleted = false;
+    root = deleteHelper(root, val, deleted);
+    return deleted;
+}
+
+void BST::clear() {
+    clearHelper(root);
+    root = nullptr;
+    nodeCount = 0;
+    if (observer) {
+        observer->onBSTClear(getSnapshot(), "BST cleared.");
     }
+}
 
-    // Helper: Recursive Deletion (With Double-Decrement Bug Fixed)
-    BSTNode *deleteHelper(BSTNode *node, int val, bool &deleted)
-    {
-        if (node == NULL)
-        {
-            deleted = false;
-            return NULL;
-        }
+bool BST::empty() const {
+    return root == nullptr;
+}
 
-        if (val < node->data)
-        {
-            node->left = deleteHelper(node->left, val, deleted);
-        }
-        else if (val > node->data)
-        {
-            node->right = deleteHelper(node->right, val, deleted);
-        }
-        else
-        {
-            deleted = true;
+int BST::size() const {
+    return nodeCount;
+}
 
-            // Case 1 & Case 2: 0 or 1 child
-            // Decrement count ONLY when memory is physically deallocated
-            if (node->left == NULL)
-            {
-                BSTNode *temp = node->right;
-                delete node;
-                count--;
-                return temp;
+vector<int> BST::getInorder() const {
+    vector<int> res;
+    inorderHelper(root, res);
+    return res;
+}
+
+vector<TreeNodeRecord> BST::getSnapshot() const {
+    vector<TreeNodeRecord> snap;
+    snapshotHelper(root, snap);
+    return snap;
+}
+
+void BST::notifyInit() {
+    if (observer) {
+        observer->onBSTInit(getSnapshot(), "BST initialized as empty.");
+    }
+}
+
+void BST::notifySearchEmpty(int target) {
+    if (observer) {
+        observer->onBSTSearch(getSnapshot(), target, false, {}, getInorder(),
+            string(YELLOW) + "BST is empty. Cannot search." + RESET);
+    }
+}
+
+void BST::notifyDeleteEmpty(int target) {
+    if (observer) {
+        observer->onBSTDelete(getSnapshot(), target, false, getInorder(),
+            string(RED) + "UNDERFLOW! BST is already empty." + RESET);
+    }
+}
+
+void BST::notifySearch(int target, bool found, const vector<string> &path) {
+    if (observer) {
+        string pathStr = "";
+        for (size_t i = 0; i < path.size(); i++) {
+            pathStr += path[i];
+            if (i + 1 < path.size())
+                pathStr += " -> ";
+        }
+        string msg;
+        if (found) {
+            msg = string(GREEN) + "Found " + to_string(target) + "! Path: " + pathStr + RESET;
+        } else {
+            msg = string(RED) + to_string(target) + " not found. Path checked: " + pathStr + RESET;
+        }
+        observer->onBSTSearch(getSnapshot(), target, found, path, getInorder(), msg);
+    }
+}
+
+void BST::notifyDelete(int target, bool deleted) {
+    if (observer) {
+        string msg;
+        if (deleted) {
+            msg = string(GREEN) + "Deleted node [" + to_string(target) + "] successfully." + RESET;
+        } else {
+            msg = string(RED) + "Node [" + to_string(target) + "] not found in BST." + RESET;
+        }
+        observer->onBSTDelete(getSnapshot(), target, deleted, getInorder(), msg);
+    }
+}
+
+void BST::notifyInsertBatch(const vector<int> &values, int addedCount, int duplicateCount) {
+    if (observer) {
+        string msg;
+        if (addedCount > 0) {
+            msg = string(GREEN) + "Inserted " + to_string(addedCount) + " value(s) into BST." + RESET;
+            if (duplicateCount > 0) {
+                msg += " (" + to_string(duplicateCount) + " duplicate(s) ignored)";
             }
-            else if (node->right == NULL)
-            {
-                BSTNode *temp = node->left;
-                delete node;
-                count--;
-                return temp;
-            }
-
-            // Case 3: 2 children
-            // Find in-order successor, swap value, and delete successor recursively.
-            // Notice: We do NOT decrement count here because the recursive call
-            // to delete the successor will hit Case 1/2 and decrement count once.
-            BSTNode *successor = findMin(node->right);
-            node->data = successor->data;
-            node->right = deleteHelper(node->right, successor->data, deleted);
+        } else if (duplicateCount > 0) {
+            msg = string(YELLOW) + "All entered value(s) were duplicates. Ignored." + RESET;
+        } else {
+            msg = string(RED) + "No valid values provided." + RESET;
         }
-        return node;
+        observer->onBSTInsertBatch(getSnapshot(), values, addedCount, duplicateCount, getInorder(), msg);
     }
+}
 
-    // Inorder: Left -> Root -> Right (Produces strictly sorted values)
-    void inorderHelper(BSTNode *node) const
-    {
-        if (node == NULL)
-            return;
-        inorderHelper(node->left);
-        cout << CYAN << "[" << node->data << "] " << RESET;
-        inorderHelper(node->right);
+void BST::notifySorted() {
+    if (observer) {
+        observer->onBSTSorted(getSnapshot(), getInorder(), empty());
     }
+}
 
-    // Post-order memory cleanup
-    void clearHelper(BSTNode *node)
-    {
-        if (node == NULL)
-            return;
-        clearHelper(node->left);
-        clearHelper(node->right);
-        delete node;
-    }
-
-    // ASCII Tree Visualizer
-    void printTreeBranches(BSTNode *node, const string &prefix, bool isLeft) const
-    {
-        if (node == NULL)
-            return;
-
-        cout << prefix;
-        cout << (isLeft ? "+-- " : "\\-- ");
-        cout << CYAN << "[" << node->data << "]" << RESET << "\n";
-
-        printTreeBranches(node->left, prefix + (isLeft ? "|   " : "    "), true);
-        printTreeBranches(node->right, prefix + (isLeft ? "|   " : "    "), false);
-    }
-
-public:
-    BST()
-    {
-        root = NULL;
-        count = 0;
-    }
-
-    ~BST()
-    {
-        clear();
-    }
-
-    bool insert(int val)
-    {
-        bool inserted = false;
-        root = insertHelper(root, val, inserted);
-        return inserted;
-    }
-
-    bool search(int val, vector<string> &path) const
-    {
-        return searchHelper(root, val, path);
-    }
-
-    bool remove(int val)
-    {
-        bool deleted = false;
-        root = deleteHelper(root, val, deleted);
-        return deleted;
-    }
-
-    void clear()
-    {
-        clearHelper(root);
-        root = NULL;
-        count = 0;
-    }
-
-    bool empty() const
-    {
-        return root == NULL;
-    }
-
-    void printSorted() const
-    {
-        if (empty())
-        {
-            cout << "  Tree is empty.\n";
-            return;
-        }
-        cout << "  Sorted Values (Inorder): ";
-        inorderHelper(root);
-        cout << "\n";
-    }
-
-    void render(const string &statusMsg = "") const
-    {
-        cout << "\n======================================================\n";
-        cout << "       BINARY SEARCH TREE (BST) VISUALIZER           \n";
-        cout << "======================================================\n\n";
-
-        if (!statusMsg.empty())
-        {
-            cout << " Status: " << statusMsg << "\n\n";
-        }
-
-        if (empty())
-        {
-            cout << "  root -> NULL\n";
-            cout << "\n  [ BST IS EMPTY ]\n";
-            return;
-        }
-
-        cout << " Tree Structure:\n\n";
-        cout << " root\n";
-        printTreeBranches(root, " ", false);
-
-        cout << "\n Total Nodes: " << count << "\n";
-        printSorted();
-    }
-};
-
-// ============================================================================
-// BST Visualizer Coordinator Loop
-// ============================================================================
 void bstVisualizer()
 {
-    BST tree;
+    ConsoleObserver obs(true);
+    BST tree(&obs);
     int choice = -1;
 
-    tree.render("BST initialized as empty.");
+    tree.notifyInit();
 
     while (choice != 0)
     {
@@ -297,45 +303,22 @@ void bstVisualizer()
 
             stringstream ss(line);
             int val;
-            int addedCount = 0;
-            int duplicateCount = 0;
+            vector<int> inputVals;
 
             while (ss >> val)
             {
-                if (tree.insert(val))
-                {
-                    addedCount++;
-                }
-                else
-                {
-                    duplicateCount++;
-                }
+                inputVals.push_back(val);
             }
 
-            if (addedCount > 0)
-            {
-                string msg = string(GREEN) + "Inserted " + to_string(addedCount) + " value(s) into BST." + RESET;
-                if (duplicateCount > 0)
-                {
-                    msg += " (" + to_string(duplicateCount) + " duplicate(s) ignored)";
-                }
-                tree.render(msg);
-            }
-            else if (duplicateCount > 0)
-            {
-                tree.render(string(YELLOW) + "All entered value(s) were duplicates. Ignored." + RESET);
-            }
-            else
-            {
-                tree.render(string(RED) + "No valid values provided." + RESET);
-            }
+            int dummyDup = 0;
+            tree.insertBatch(inputVals, dummyDup);
             break;
         }
         case 2:
         {
             if (tree.empty())
             {
-                tree.render(string(YELLOW) + "BST is empty. Cannot search." + RESET);
+                tree.notifySearchEmpty(0);
                 break;
             }
             int val;
@@ -350,30 +333,14 @@ void bstVisualizer()
 
             vector<string> path;
             bool found = tree.search(val, path);
-
-            string pathStr = "";
-            for (size_t i = 0; i < path.size(); i++)
-            {
-                pathStr += path[i];
-                if (i + 1 < path.size())
-                    pathStr += " -> ";
-            }
-
-            if (found)
-            {
-                tree.render(string(GREEN) + "Found " + to_string(val) + "! Path: " + pathStr + RESET);
-            }
-            else
-            {
-                tree.render(string(RED) + to_string(val) + " not found. Path checked: " + pathStr + RESET);
-            }
+            tree.notifySearch(val, found, path);
             break;
         }
         case 3:
         {
             if (tree.empty())
             {
-                tree.render(string(RED) + "UNDERFLOW! BST is already empty." + RESET);
+                tree.notifyDeleteEmpty(0);
                 break;
             }
             int val;
@@ -386,20 +353,13 @@ void bstVisualizer()
             }
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-            if (tree.remove(val))
-            {
-                tree.render(string(GREEN) + "Deleted node [" + to_string(val) + "] successfully." + RESET);
-            }
-            else
-            {
-                tree.render(string(RED) + "Node [" + to_string(val) + "] not found in BST." + RESET);
-            }
+            bool deleted = tree.remove(val);
+            tree.notifyDelete(val, deleted);
             break;
         }
         case 4:
         {
             tree.clear();
-            tree.render("BST cleared.");
             break;
         }
         case 0:

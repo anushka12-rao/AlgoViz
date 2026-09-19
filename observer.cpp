@@ -859,3 +859,201 @@ void ConsoleObserver::onListSearch(const std::vector<int> &elements, int key, in
 void ConsoleObserver::onListClear(const std::vector<int> &elements) {
     renderList(elements, -1, "List cleared.");
 }
+
+// ----------------------------------------------------------------------------
+// Tree Visualizer Helpers & Hooks
+// ----------------------------------------------------------------------------
+
+static int computeTreeHeightHelper(const std::vector<TreeNodeRecord> &tree, int nodeIdx) {
+    if (nodeIdx < 0 || nodeIdx >= static_cast<int>(tree.size()))
+        return 0;
+    int leftH = (tree[nodeIdx].left_id != -1) ? computeTreeHeightHelper(tree, tree[nodeIdx].left_id) : 0;
+    int rightH = (tree[nodeIdx].right_id != -1) ? computeTreeHeightHelper(tree, tree[nodeIdx].right_id) : 0;
+    return 1 + std::max(leftH, rightH);
+}
+
+static void printBSTInorderHelper(const std::vector<TreeNodeRecord> &tree, int nodeIdx) {
+    if (nodeIdx < 0 || nodeIdx >= static_cast<int>(tree.size()))
+        return;
+    if (tree[nodeIdx].left_id != -1) {
+        printBSTInorderHelper(tree, tree[nodeIdx].left_id);
+    }
+    std::cout << CYAN << "[" << tree[nodeIdx].val << "] " << RESET;
+    if (tree[nodeIdx].right_id != -1) {
+        printBSTInorderHelper(tree, tree[nodeIdx].right_id);
+    }
+}
+
+void ConsoleObserver::renderTreeBranches(const std::vector<TreeNodeRecord> &tree, int nodeIdx, const std::string &prefix, bool isLeft) const {
+    if (nodeIdx < 0 || nodeIdx >= static_cast<int>(tree.size()))
+        return;
+
+    const auto &node = tree[nodeIdx];
+    std::cout << prefix;
+    std::cout << (isLeft ? "+-- " : "\\-- ");
+    std::cout << CYAN << "[" << node.val << "]" << RESET << "\n";
+
+    if (node.left_id != -1)
+        renderTreeBranches(tree, node.left_id, prefix + (isLeft ? "|   " : "    "), true);
+    if (node.right_id != -1)
+        renderTreeBranches(tree, node.right_id, prefix + (isLeft ? "|   " : "    "), false);
+}
+
+void ConsoleObserver::renderBinaryTree(const std::vector<TreeNodeRecord> &tree, const std::string &statusMsg) const {
+    std::cout << "\n======================================================\n";
+    std::cout << "            BINARY TREE VISUALIZER                   \n";
+    std::cout << "======================================================\n\n";
+
+    if (!statusMsg.empty())
+    {
+        std::cout << " Status: " << statusMsg << "\n\n";
+    }
+
+    if (tree.empty())
+    {
+        std::cout << "  root -> NULL\n";
+        std::cout << "\n  [ TREE IS EMPTY ]\n";
+        return;
+    }
+
+    std::cout << " Tree Hierarchy:\n\n";
+    std::cout << " root\n";
+    renderTreeBranches(tree, 0, " ", false);
+    std::cout << "\n Total Nodes: " << tree.size()
+              << " | Height: " << computeTreeHeightHelper(tree, 0) << "\n";
+}
+
+void ConsoleObserver::renderBST(const std::vector<TreeNodeRecord> &tree, const std::string &statusMsg) const {
+    std::cout << "\n======================================================\n";
+    std::cout << "       BINARY SEARCH TREE (BST) VISUALIZER           \n";
+    std::cout << "======================================================\n\n";
+
+    if (!statusMsg.empty())
+    {
+        std::cout << " Status: " << statusMsg << "\n\n";
+    }
+
+    if (tree.empty())
+    {
+        std::cout << "  root -> NULL\n";
+        std::cout << "\n  [ BST IS EMPTY ]\n";
+        return;
+    }
+
+    std::cout << " Tree Structure:\n\n";
+    std::cout << " root\n";
+    renderTreeBranches(tree, 0, " ", false);
+
+    std::cout << "\n Total Nodes: " << tree.size() << "\n";
+    std::cout << "  Sorted Values (Inorder): ";
+    printBSTInorderHelper(tree, 0);
+    std::cout << "\n";
+}
+
+// Binary Tree Callbacks
+void ConsoleObserver::onBinaryTreeInit(const std::vector<TreeNodeRecord> &tree, const std::string &msg) {
+    renderBinaryTree(tree, msg);
+}
+
+void ConsoleObserver::onBinaryTreeInsert(const std::vector<TreeNodeRecord> &tree, int parentVal, int newVal, char side, bool success, const std::string &msg) {
+    (void)parentVal;
+    (void)newVal;
+    (void)side;
+    (void)success;
+    renderBinaryTree(tree, msg);
+}
+
+void ConsoleObserver::onBinaryTreeBuildPreorder(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &preorder, bool success, const std::string &msg) {
+    (void)preorder;
+    (void)success;
+    renderBinaryTree(tree, msg);
+}
+
+void ConsoleObserver::onBinaryTreeTraversal(const std::vector<TreeNodeRecord> &tree, const std::string &traversalType, const std::vector<int> &result, bool empty) {
+    if (empty) {
+        renderBinaryTree(tree, std::string(YELLOW) + "Tree is empty. Insert data first." + RESET);
+        return;
+    }
+    renderBinaryTree(tree, "");
+    if (traversalType == "inorder") {
+        std::cout << "\n Inorder Traversal (Left -> Root -> Right):\n ";
+    } else if (traversalType == "preorder") {
+        std::cout << "\n Preorder Traversal (Root -> Left -> Right):\n ";
+    } else if (traversalType == "postorder") {
+        std::cout << "\n Postorder Traversal (Left -> Right -> Root):\n ";
+    }
+    for (int v : result) {
+        std::cout << CYAN << "[" << v << "] " << RESET;
+    }
+    std::cout << "\n";
+}
+
+void ConsoleObserver::onBinaryTreeLevelOrder(const std::vector<TreeNodeRecord> &tree, const std::vector<std::vector<int>> &levels, bool empty) {
+    if (empty) {
+        renderBinaryTree(tree, std::string(YELLOW) + "Tree is empty. Insert data first." + RESET);
+        return;
+    }
+    renderBinaryTree(tree, "");
+    std::cout << "\n Level Order Traversal (BFS):\n";
+    for (size_t i = 0; i < levels.size(); i++) {
+        std::cout << "   Level " << i << ": ";
+        for (int v : levels[i]) {
+            std::cout << CYAN << "[" << v << "] " << RESET;
+        }
+        std::cout << "\n";
+    }
+}
+
+void ConsoleObserver::onBinaryTreeMetrics(const std::vector<TreeNodeRecord> &tree, int count, int height, int sum, bool empty) {
+    if (empty) {
+        renderBinaryTree(tree, std::string(YELLOW) + "Tree is empty. Insert data first." + RESET);
+        return;
+    }
+    renderBinaryTree(tree, "");
+    std::cout << "\n Tree Metrics:\n";
+    std::cout << "  - Total Nodes : " << count << "\n";
+    std::cout << "  - Tree Height : " << height << "\n";
+    std::cout << "  - Sum of Nodes: " << sum << "\n";
+}
+
+void ConsoleObserver::onBinaryTreeClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) {
+    renderBinaryTree(tree, msg);
+}
+
+// BST Callbacks
+void ConsoleObserver::onBSTInit(const std::vector<TreeNodeRecord> &tree, const std::string &msg) {
+    renderBST(tree, msg);
+}
+
+void ConsoleObserver::onBSTInsertBatch(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &inputValues, int addedCount, int duplicateCount, const std::vector<int> &sortedValues, const std::string &msg) {
+    (void)inputValues;
+    (void)addedCount;
+    (void)duplicateCount;
+    (void)sortedValues;
+    renderBST(tree, msg);
+}
+
+void ConsoleObserver::onBSTSearch(const std::vector<TreeNodeRecord> &tree, int target, bool found, const std::vector<std::string> &path, const std::vector<int> &sortedValues, const std::string &msg) {
+    (void)target;
+    (void)found;
+    (void)path;
+    (void)sortedValues;
+    renderBST(tree, msg);
+}
+
+void ConsoleObserver::onBSTDelete(const std::vector<TreeNodeRecord> &tree, int val, bool deleted, const std::vector<int> &sortedValues, const std::string &msg) {
+    (void)val;
+    (void)deleted;
+    (void)sortedValues;
+    renderBST(tree, msg);
+}
+
+void ConsoleObserver::onBSTSorted(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &sortedValues, bool empty) {
+    (void)sortedValues;
+    (void)empty;
+    renderBST(tree, "");
+}
+
+void ConsoleObserver::onBSTClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) {
+    renderBST(tree, msg);
+}

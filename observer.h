@@ -3,6 +3,17 @@
 #include <string>
 #include <map>
 
+// Generic Tree Node Record representing a snapshot of a node with structural pointer IDs
+struct TreeNodeRecord {
+    int id;
+    int val;
+    int left_id;  // -1 if NULL
+    int right_id; // -1 if NULL
+
+    TreeNodeRecord() : id(-1), val(0), left_id(-1), right_id(-1) {}
+    TreeNodeRecord(int i, int v, int l = -1, int r = -1) : id(i), val(v), left_id(l), right_id(r) {}
+};
+
 // Generic step event payload capturing algorithm state transitions
 struct StepEvent {
     int step_index;
@@ -11,6 +22,7 @@ struct StepEvent {
     int canonical_duration_ms;
     std::vector<int> active_indices;
     std::vector<int> array_state;
+    std::vector<TreeNodeRecord> tree_state;
     int sorted_boundary;
     int range_st;
     int range_end;
@@ -122,6 +134,23 @@ public:
     virtual void onListUnderflow(const std::vector<int> &elements, const std::string &op) {}
     virtual void onListSearch(const std::vector<int> &elements, int key, int foundIdx, bool wasEmpty) {}
     virtual void onListClear(const std::vector<int> &elements) {}
+
+    // Binary Tree specific hooks
+    virtual void onBinaryTreeInit(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*msg*/) {}
+    virtual void onBinaryTreeInsert(const std::vector<TreeNodeRecord> & /*tree*/, int /*parentVal*/, int /*newVal*/, char /*side*/, bool /*success*/, const std::string & /*msg*/) {}
+    virtual void onBinaryTreeBuildPreorder(const std::vector<TreeNodeRecord> & /*tree*/, const std::vector<int> & /*preorder*/, bool /*success*/, const std::string & /*msg*/) {}
+    virtual void onBinaryTreeTraversal(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*traversalType*/, const std::vector<int> & /*result*/, bool /*empty*/) {}
+    virtual void onBinaryTreeLevelOrder(const std::vector<TreeNodeRecord> & /*tree*/, const std::vector<std::vector<int>> & /*levels*/, bool /*empty*/) {}
+    virtual void onBinaryTreeMetrics(const std::vector<TreeNodeRecord> & /*tree*/, int /*count*/, int /*height*/, int /*sum*/, bool /*empty*/) {}
+    virtual void onBinaryTreeClear(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*msg*/) {}
+
+    // BST specific hooks
+    virtual void onBSTInit(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*msg*/) {}
+    virtual void onBSTInsertBatch(const std::vector<TreeNodeRecord> & /*tree*/, const std::vector<int> & /*inputValues*/, int /*addedCount*/, int /*duplicateCount*/, const std::vector<int> & /*sortedValues*/, const std::string & /*msg*/) {}
+    virtual void onBSTSearch(const std::vector<TreeNodeRecord> & /*tree*/, int /*target*/, bool /*found*/, const std::vector<std::string> & /*path*/, const std::vector<int> & /*sortedValues*/, const std::string & /*msg*/) {}
+    virtual void onBSTDelete(const std::vector<TreeNodeRecord> & /*tree*/, int /*val*/, bool /*deleted*/, const std::vector<int> & /*sortedValues*/, const std::string & /*msg*/) {}
+    virtual void onBSTSorted(const std::vector<TreeNodeRecord> & /*tree*/, const std::vector<int> & /*sortedValues*/, bool /*empty*/) {}
+    virtual void onBSTClear(const std::vector<TreeNodeRecord> & /*tree*/, const std::string & /*msg*/) {}
 };
 
 // ConsoleObserver: Renders existing terminal output and handles Sleep / waitForEnter
@@ -227,8 +256,28 @@ public:
     void onListSearch(const std::vector<int> &elements, int key, int foundIdx, bool wasEmpty) override;
     void onListClear(const std::vector<int> &elements) override;
 
+    // Binary Tree hooks
+    void onBinaryTreeInit(const std::vector<TreeNodeRecord> &tree, const std::string &msg) override;
+    void onBinaryTreeInsert(const std::vector<TreeNodeRecord> &tree, int parentVal, int newVal, char side, bool success, const std::string &msg) override;
+    void onBinaryTreeBuildPreorder(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &preorder, bool success, const std::string &msg) override;
+    void onBinaryTreeTraversal(const std::vector<TreeNodeRecord> &tree, const std::string &traversalType, const std::vector<int> &result, bool empty) override;
+    void onBinaryTreeLevelOrder(const std::vector<TreeNodeRecord> &tree, const std::vector<std::vector<int>> &levels, bool empty) override;
+    void onBinaryTreeMetrics(const std::vector<TreeNodeRecord> &tree, int count, int height, int sum, bool empty) override;
+    void onBinaryTreeClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) override;
+
+    // BST hooks
+    void onBSTInit(const std::vector<TreeNodeRecord> &tree, const std::string &msg) override;
+    void onBSTInsertBatch(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &inputValues, int addedCount, int duplicateCount, const std::vector<int> &sortedValues, const std::string &msg) override;
+    void onBSTSearch(const std::vector<TreeNodeRecord> &tree, int target, bool found, const std::vector<std::string> &path, const std::vector<int> &sortedValues, const std::string &msg) override;
+    void onBSTDelete(const std::vector<TreeNodeRecord> &tree, int val, bool deleted, const std::vector<int> &sortedValues, const std::string &msg) override;
+    void onBSTSorted(const std::vector<TreeNodeRecord> &tree, const std::vector<int> &sortedValues, bool empty) override;
+    void onBSTClear(const std::vector<TreeNodeRecord> &tree, const std::string &msg) override;
+
     // Terminal renderers
     void renderStack(const std::vector<int> &v, int highlightIndex = -1, const std::string &statusMsg = "") const;
     void renderQueue(const std::vector<int> &v, const std::string &statusMsg = "") const;
     void renderList(const std::vector<int> &v, int highlightIdx = -1, const std::string &statusMsg = "") const;
+    void renderTreeBranches(const std::vector<TreeNodeRecord> &tree, int nodeIdx, const std::string &prefix, bool isLeft) const;
+    void renderBinaryTree(const std::vector<TreeNodeRecord> &tree, const std::string &statusMsg = "") const;
+    void renderBST(const std::vector<TreeNodeRecord> &tree, const std::string &statusMsg = "") const;
 };
