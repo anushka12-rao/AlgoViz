@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { SERVICE_NAME } from '../config/constants';
 import { algorithmRouter } from './algorithm.routes';
+import { visualizeRouter } from './visualize.routes';
 
 export const apiRouter = Router();
 
@@ -13,4 +14,4 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
 });
 
 apiRouter.use('/algorithms', algorithmRouter);
-
+apiRouter.use('/visualize', visualizeRouter);
