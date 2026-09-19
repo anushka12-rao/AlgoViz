@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { SERVICE_NAME } from '../config/constants';
+import { algorithmRouter } from './algorithm.routes';
 
 export const apiRouter = Router();
 
@@ -10,3 +11,6 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
     status: 'ok',
   });
 });
+
+apiRouter.use('/algorithms', algorithmRouter);
+

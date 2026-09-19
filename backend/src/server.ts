@@ -1,5 +1,9 @@
 import { app } from './app';
 import { env } from './config/env';
+import { initDatabase, closeDatabase } from './db/connection';
+
+// Initialize SQLite database and seed metadata
+initDatabase();
 
 const server = app.listen(env.PORT, () => {
   console.log(`[algoviz-backend] Server listening on port ${env.PORT} (mode: ${env.NODE_ENV})`);
@@ -8,7 +12,8 @@ const server = app.listen(env.PORT, () => {
 function gracefulShutdown(signal: string): void {
   console.log(`[algoviz-backend] Received ${signal}. Gracefully shutting down HTTP server...`);
   server.close(() => {
-    console.log('[algoviz-backend] HTTP server closed. Exiting process.');
+    closeDatabase();
+    console.log('[algoviz-backend] HTTP server and database closed. Exiting process.');
     process.exit(0);
   });
 
