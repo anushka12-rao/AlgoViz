@@ -271,7 +271,7 @@ describe('Phase 10C Catalog & API Integration Tests', () => {
     expect(screen.getByText(bubbleSortDetail.description)).toBeInTheDocument();
     expect(screen.getByText('O(n)')).toBeInTheDocument(); // best time
     expect(screen.getByText('array')).toBeInTheDocument(); // input type
-    expect(screen.getByText(/Visualization Workspace Shell/i)).toBeInTheDocument();
+    expect(screen.getByText(/Visualization Workspace/i)).toBeInTheDocument();
   });
 
   it('5. renders safe error state on API failure with retry capability', async () => {

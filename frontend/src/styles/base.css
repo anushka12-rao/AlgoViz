@@ -360,3 +360,107 @@ html, body {
   font-size: 0.925rem;
   line-height: 1.5;
 }
+
+/* Status and Badge Variants */
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Array Visualizer Bar Colors */
+.array-bar.bar-default {
+  background-color: var(--primary-color);
+}
+
+.array-bar.bar-active {
+  background-color: #f59e0b; /* Amber */
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.array-bar.bar-swap {
+  background-color: #ef4444; /* Crimson */
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.array-bar.bar-new-min {
+  background-color: #06b6d4; /* Cyan */
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+.array-bar.bar-pivot {
+  background-color: #8b5cf6; /* Purple */
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.array-bar.bar-sorted {
+  background-color: #10b981; /* Emerald */
+}
+
+.array-bar.bar-dimmed {
+  opacity: 0.35;
+}
+
+/* Search Visualizer Cells */
+.search-cell.search-cell-default {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.search-cell.search-cell-check {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.search-cell.search-cell-mismatch {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.search-cell.search-cell-match {
+  background-color: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.search-cell.search-cell-step {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.search-cell.search-cell-mid {
+  background-color: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.search-cell-dimmed {
+  opacity: 0.3;
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .array-bar,
+  .search-cell,
+  .filter-pill,
+  .spinner {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+

@@ -96,7 +96,7 @@ describe('Phase 10B Frontend Foundation Tests', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Quick Sort/i })).toBeInTheDocument();
     });
-    expect(screen.getByText(/Visualization Workspace Shell/i)).toBeInTheDocument();
+    expect(screen.getByText(/Visualization Workspace/i)).toBeInTheDocument();
   });
 
   it('renders AdminLoginPage at "/admin/login"', () => {
