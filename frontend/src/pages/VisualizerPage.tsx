@@ -10,16 +10,31 @@ import { StatsPanel } from '../components/visualizer/StatsPanel';
 import { StatusBanner } from '../components/visualizer/StatusBanner';
 import { ArrayVisualizer } from '../components/visualizer/ArrayVisualizer';
 import { SearchVisualizer } from '../components/visualizer/SearchVisualizer';
+import { DataStructureVisualizer } from '../components/visualizer/DataStructureVisualizer';
+import { TreeVisualizer } from '../components/visualizer/TreeVisualizer';
+import { GraphVisualizer } from '../components/visualizer/GraphVisualizer';
 import { VisualizerInputForm } from '../components/visualizer/VisualizerInputForm';
 
 const SUPPORTED_ALGORITHMS = new Set([
+  // Sorting (Phase 10D)
   'bubble_sort',
   'selection_sort',
   'insertion_sort',
   'merge_sort',
   'quick_sort',
+  // Searching (Phase 10D)
   'linear_search',
   'binary_search',
+  // Data Structures (Phase 10F)
+  'stack',
+  'queue',
+  'linked_list',
+  // Trees (Phase 10F)
+  'binary_tree',
+  'bst',
+  // Graphs (Phase 10F)
+  'bfs',
+  'dfs',
 ]);
 
 export const VisualizerPage: React.FC = () => {
@@ -58,7 +73,7 @@ export const VisualizerPage: React.FC = () => {
     loadAlgorithm();
   }, [loadAlgorithm]);
 
-  const handleRunVisualization = async (array: number[], target?: number) => {
+  const handleRunVisualization = async (payloadOrArray: any, target?: number) => {
     if (!algorithm) return;
 
     setExecuting(true);
@@ -66,8 +81,13 @@ export const VisualizerPage: React.FC = () => {
     playback.startLoading();
 
     try {
-      const isSearch = algorithm.category === 'searching';
-      const inputPayload = isSearch ? { array, target: target ?? 0 } : { array };
+      let inputPayload: any;
+      if (Array.isArray(payloadOrArray)) {
+        const isSearch = algorithm.category === 'searching';
+        inputPayload = isSearch ? { array: payloadOrArray, target: target ?? 0 } : { array: payloadOrArray };
+      } else {
+        inputPayload = payloadOrArray;
+      }
 
       const response = await visualizeAlgorithm({
         algorithm: algorithm.id,
@@ -91,6 +111,9 @@ export const VisualizerPage: React.FC = () => {
   const isSupported = algorithmId ? SUPPORTED_ALGORITHMS.has(algorithmId) : false;
   const isSorting = algorithm?.category === 'sorting';
   const isSearching = algorithm?.category === 'searching';
+  const isDataStructure = algorithm?.category === 'data_structures';
+  const isTree = algorithm?.category === 'trees';
+  const isGraph = algorithm?.category === 'graphs';
 
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto' }}>
@@ -113,7 +136,7 @@ export const VisualizerPage: React.FC = () => {
           &larr; Back to Catalog
         </Link>
         <span className="badge badge-primary">
-          {isSupported ? 'Interactive Visualizer (Phase 10D)' : 'Metadata Shell'}
+          {isSupported ? 'Interactive Visualizer' : 'Metadata Shell'}
         </span>
       </div>
 
@@ -221,7 +244,7 @@ export const VisualizerPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Interactive Workspace (Phase 10D: Sorting & Searching) */}
+          {/* Interactive Workspace for all 14 algorithms */}
           {isSupported ? (
             <div className="visualizer-workspace" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -229,6 +252,7 @@ export const VisualizerPage: React.FC = () => {
                   Visualization Workspace
                 </h2>
               </div>
+
               {/* Input Form */}
               <VisualizerInputForm
                 algorithmId={algorithm.id}
@@ -268,6 +292,27 @@ export const VisualizerPage: React.FC = () => {
                 />
               )}
 
+              {isDataStructure && (
+                <DataStructureVisualizer
+                  currentEvent={playback.currentEvent}
+                  algorithmId={algorithm.id}
+                />
+              )}
+
+              {isTree && (
+                <TreeVisualizer
+                  currentEvent={playback.currentEvent}
+                  algorithmId={algorithm.id}
+                />
+              )}
+
+              {isGraph && (
+                <GraphVisualizer
+                  currentEvent={playback.currentEvent}
+                  algorithmId={algorithm.id}
+                />
+              )}
+
               {/* Playback Controls Toolbar */}
               <PlaybackControls
                 isPlaying={playback.isPlaying}
@@ -296,33 +341,16 @@ export const VisualizerPage: React.FC = () => {
               <StatsPanel currentEvent={playback.currentEvent} />
             </div>
           ) : (
-            /* Future Phase Placeholder Shell */
             <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
               <span className="badge" style={{ marginBottom: '1rem' }}>
-                Coming in Subsequent Phases
+                Algorithm Unavailable
               </span>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-                Visualization Workspace Shell
+                Visualization Workspace
               </h2>
               <p style={{ color: 'var(--text-secondary)', maxWidth: '650px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
-                Visualizer rendering for <strong>{algorithm.name}</strong> is planned for subsequent phases.
-                Phase 10D supports all 5 Sorting algorithms and both Searching algorithms.
+                Visualizer for <strong>{algorithm.name}</strong> is currently unavailable.
               </p>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem 1.25rem',
-                  background: 'var(--bg-secondary)',
-                  borderRadius: '6px',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                <span>Execution Input Contract:</span>
-                <code style={{ color: 'var(--primary-color)', fontWeight: 600 }}>{algorithm.input_type}</code>
-              </div>
             </div>
           )}
         </div>
