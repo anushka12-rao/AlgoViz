@@ -1,3 +1,4 @@
+#include "binary_search.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -8,56 +9,13 @@
 
 using namespace std;
 
-// Render current search boundaries and pointer markers
-static void printbinarySearchState(const vector<int> &arr, int st, int mid, int end, int tar)
-{
-    int n = arr.size();
-
-    cout << "\nIndex: ";
-    for (int i = 0; i < n; i++)
-    {
-        cout << setw(6) << i;
-    }
-
-    cout << "\nArray: ";
-    for (int i = 0; i < n; i++)
-    {
-        if (i == mid)
-        {
-            string val = "[" + to_string(arr[i]) + "]";
-            if (arr[i] == tar)
-                cout << GREEN << setw(6) << val << RESET;
-            else
-                cout << YELLOW << setw(6) << val << RESET;
-        }
-        else if (i >= st && i <= end)
-        {
-            cout << CYAN << setw(6) << arr[i] << RESET;
-        }
-        else
-        {
-            cout << GRAY << setw(6) << arr[i] << RESET;
-        }
-    }
-    cout << "\nPtrs : ";
-    for (int i = 0; i < n; i++)
-    {
-        string ptr = "";
-        if (i == st)
-            ptr += "st";
-        if (i == mid)
-            ptr += (ptr.empty() ? "" : "/") + string("mid");
-        if (i == end)
-            ptr += (ptr.empty() ? "" : "/") + string("end");
-        cout << setw(6) << (ptr.empty() ? " " : ptr);
-    }
-    cout << "\n";
-}
-
 // Iterative binary search implementation on a sorted array
-int binarySearch(vector<int> arr, int tar, int &comparisons, bool autoMode)
-{ // Iterative
-    int st = 0, end = arr.size() - 1;
+int binarySearchCore(const vector<int> &arr, int tar, IAlgoObserver &obs, bool autoMode)
+{
+    obs.onBinarySearchStart(arr, tar);
+
+    int st = 0, end = (int)arr.size() - 1;
+    int comparisons = 0;
 
     // Continue searching while the search window is valid
     while (st <= end)
@@ -66,43 +24,38 @@ int binarySearch(vector<int> arr, int tar, int &comparisons, bool autoMode)
         // Calculate midpoint using overflow-safe arithmetic
         int mid = st + (end - st) / 2;
 
-        cout << "\n----------------------------------------";
-        cout << "\nst = " << st << ", end = " << end << " => mid = " << mid << " (arr[mid] = " << arr[mid] << ")\n";
-        printbinarySearchState(arr, st, mid, end, tar);
+        obs.onBinarySearchStep(arr, st, mid, end, tar, comparisons);
 
         // Case 1.Target is greater than midpoint value; search in 2nd half
         if (tar > arr[mid])
         {
-            cout << YELLOW << "--> tar (" << tar << ") > arr[mid] (" << arr[mid] << "): Searching in 2nd half (st = mid + 1)" << RESET << "\n";
+            obs.onBinarySearchGreater(arr, mid, tar, arr[mid]);
             st = mid + 1; // 2nd half
         }
         // Case 2: Target is smaller than midpoint value; search in 1st half
         else if (tar < arr[mid])
         {
-            cout << BLUE << " --> tar(" << tar << ") < arr[mid] (" << arr[mid] << "): Searching in first half( end = mid - 1)" << RESET << "\n";
+            obs.onBinarySearchSmaller(arr, mid, tar, arr[mid]);
             end = mid - 1; // 1st half
         }
         // Case 3: Target matches mid point element
         else
         {
-            cout << GREEN << " --> tar (" << tar << ") == arr[mid] (" << arr[mid] << "): Match found at index " << mid << "!" << RESET << "\n";
-            if (autoMode)
-                pause(800);
-            else
-                waitForEnter();
+            obs.onBinarySearchMatch(arr, mid, tar, arr[mid]);
+            obs.onPause(800);
+            obs.onBinarySearchComplete(arr, tar, mid, comparisons);
             return mid; // Return 0- based index of matched target
         }
 
-        if (autoMode)
-            pause(800);
-        else
-            waitForEnter();
+        obs.onPause(800);
     }
 
     // Target does not exist in the collection
+    obs.onBinarySearchComplete(arr, tar, -1, comparisons);
     return -1;
 }
-// Visualizer coordiantor for the terminal interface
+
+// Visualizer coordinator for the terminal interface
 void binarySearchVisualizer()
 {
     bool autoMode = chooseMode();
@@ -144,37 +97,11 @@ void binarySearchVisualizer()
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
-    cout << "\n"
-         << YELLOW << "Search Array:" << RESET << "\n";
-    printArray(arr.data(), n);
-    cout << "Target: " << CYAN << tar << RESET << " | Size: " << n << "\n";
-    waitForEnter();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    int comparisons = 0;
-    int ans = binarySearch(arr, tar, comparisons, autoMode);
+    ConsoleObserver obs(autoMode);
+    binarySearchCore(arr, tar, obs, autoMode);
 
-    // Result Dashboard
-    printHeader("BINARY SEARCH COMPLETE");
-    if (ans != -1)
-    {
-        cout << GREEN << "Result: Found target at index " << ans << RESET << "\n";
-    }
-    else
-    {
-        cout << RED << "Result: Target not found in array (-1)" << RESET << "\n";
-    }
-
-    cout << "\n----------------------------------------\n";
-    cout << " STATISTICS\n";
-    cout << "----------------------------------------\n";
-    cout << " Target (tar)      : " << tar << "\n";
-    cout << " Array Size        : " << n << "\n";
-    cout << " Total Iterations  : " << comparisons << "\n";
-    cout << " Returned Index    : " << ans << "\n";
-    cout << "----------------------------------------\n";
-
-    printComplexity("O(1)", "O(logn)", "O(logn)", "O(1)");
     cout << "\nPress Enter to return to the menu...";
-
     cin.get();
 }

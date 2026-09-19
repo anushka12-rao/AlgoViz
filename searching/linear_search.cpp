@@ -1,3 +1,4 @@
+#include "linear_search.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -5,61 +6,33 @@
 
 using namespace std;
 
-// Highlight array traversal: visually marks the active comparison index
-static void printSearchStep(int arr[], int sz, int currentIndex, int target)
-{
-    cout << "[ ";
-    for (int i = 0; i < sz; i++)
-    {
-        if (i == currentIndex)
-        {
-            if (arr[i] == target)
-            {
-                cout << GREEN << "[" << arr[i] << "]" << RESET << " ";
-            }
-            else
-            {
-                cout << YELLOW << "[" << arr[i] << "]" << RESET << " ";
-            }
-        }
-        else
-        {
-            cout << arr[i] << " ";
-        }
-    }
-    cout << "]\n";
-}
-
 // Sequential search through the array to find target element
-int linearSearch(int arr[], int sz, int target, int &comparisons, bool autoMode)
+int linearSearchCore(const vector<int> &arr, int target, IAlgoObserver &obs, bool autoMode)
 {
+    int sz = arr.size();
+    obs.onLinearSearchStart(arr, target);
+
+    int comparisons = 0;
     for (int i = 0; i < sz; i++)
     {
         comparisons++;
-        cout << "\nChecking index [" << i << "] -> Value: " << arr[i] << "\n";
-        printSearchStep(arr, sz, i, target);
+        obs.onLinearSearchCheck(arr, i, target, comparisons);
 
         // Target match condition: element exists in array
         if (arr[i] == target)
         {
-            cout << GREEN << "--> Element found! Value " << target
-                 << " located at index " << i << RESET << "\n";
-            if (autoMode)
-                pause(700);
-            else
-                waitForEnter();
+            obs.onLinearSearchMatch(arr, i, target);
+            obs.onPause(700);
+            obs.onLinearSearchComplete(arr, target, i, comparisons);
             return i; // Return 0-based index of matched target
         }
 
-        cout << RED << "--> " << arr[i] << " != " << target
-             << ", advancing cursor..." << RESET << "\n";
-        if (autoMode)
-            pause(700);
-        else
-            waitForEnter();
+        obs.onLinearSearchMismatch(arr, i, arr[i], target);
+        obs.onPause(700);
     }
 
     // Unsuccessful search: target does not exist within array bounds
+    obs.onLinearSearchComplete(arr, target, -1, comparisons);
     return -1;
 }
 
@@ -100,36 +73,8 @@ void linearSearchVisualizer()
 
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    cout << "\n"
-         << YELLOW << "Initial Array:" << RESET << "\n";
-    printArray(arr.data(), sz);
-    cout << "Target: " << CYAN << target << RESET << " | Size (sz): " << sz << "\n";
-    waitForEnter();
-
-    int comparisons = 0;
-    int ans = linearSearch(arr.data(), sz, target, comparisons, autoMode);
-
-    // Results Dashboard
-    printHeader("LINEAR SEARCH COMPLETE");
-    if (ans != -1)
-    {
-        cout << GREEN << "Result: Found at index " << ans << RESET << "\n";
-    }
-    else
-    {
-        cout << RED << "Result: Element not found in array (-1)" << RESET << "\n";
-    }
-
-    cout << "\n----------------------------------------\n";
-    cout << " STATISTICS\n";
-    cout << "----------------------------------------\n";
-    cout << " Target Searched   : " << target << "\n";
-    cout << " Array Size (sz)   : " << sz << "\n";
-    cout << " Total Comparisons : " << comparisons << "\n";
-    cout << " Returned Index    : " << ans << "\n";
-    cout << "----------------------------------------\n";
-
-    printComplexity("O(1)", "O(n)", "O(n)", "O(1)");
+    ConsoleObserver obs(autoMode);
+    linearSearchCore(arr, target, obs, autoMode);
 
     cout << "\nPress Enter to return to the menu...";
     cin.get();

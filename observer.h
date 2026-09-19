@@ -78,6 +78,21 @@ public:
     virtual void onQuickPivotPlaced(const std::vector<int> &arr, int pivotIdx, int oldEndIdx, int pivotVal, int st, int end, int swaps) {}
     virtual void onQuickSubparts(const std::vector<int> &arr, int pivIdx, int st, int end) {}
     virtual void onQuickComplete(const std::vector<int> &arr, int comparisons, int swaps) {}
+
+    // Linear search specific hooks
+    virtual void onLinearSearchStart(const std::vector<int> &arr, int target) {}
+    virtual void onLinearSearchCheck(const std::vector<int> &arr, int currentIndex, int target, int comparisons) {}
+    virtual void onLinearSearchMatch(const std::vector<int> &arr, int index, int target) {}
+    virtual void onLinearSearchMismatch(const std::vector<int> &arr, int index, int currentVal, int target) {}
+    virtual void onLinearSearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) {}
+
+    // Binary search specific hooks
+    virtual void onBinarySearchStart(const std::vector<int> &arr, int target) {}
+    virtual void onBinarySearchStep(const std::vector<int> &arr, int st, int mid, int end, int target, int comparisons) {}
+    virtual void onBinarySearchGreater(const std::vector<int> &arr, int mid, int target, int midVal) {}
+    virtual void onBinarySearchSmaller(const std::vector<int> &arr, int mid, int target, int midVal) {}
+    virtual void onBinarySearchMatch(const std::vector<int> &arr, int mid, int target, int midVal) {}
+    virtual void onBinarySearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) {}
 };
 
 // ConsoleObserver: Renders existing terminal output and handles Sleep / waitForEnter
@@ -138,4 +153,19 @@ public:
     void onQuickPivotPlaced(const std::vector<int> &arr, int pivotIdx, int oldEndIdx, int pivotVal, int st, int end, int swaps) override;
     void onQuickSubparts(const std::vector<int> &arr, int pivIdx, int st, int end) override;
     void onQuickComplete(const std::vector<int> &arr, int comparisons, int swaps) override;
+
+    // Linear search
+    void onLinearSearchStart(const std::vector<int> &arr, int target) override;
+    void onLinearSearchCheck(const std::vector<int> &arr, int currentIndex, int target, int comparisons) override;
+    void onLinearSearchMatch(const std::vector<int> &arr, int index, int target) override;
+    void onLinearSearchMismatch(const std::vector<int> &arr, int index, int currentVal, int target) override;
+    void onLinearSearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) override;
+
+    // Binary search
+    void onBinarySearchStart(const std::vector<int> &arr, int target) override;
+    void onBinarySearchStep(const std::vector<int> &arr, int st, int mid, int end, int target, int comparisons) override;
+    void onBinarySearchGreater(const std::vector<int> &arr, int mid, int target, int midVal) override;
+    void onBinarySearchSmaller(const std::vector<int> &arr, int mid, int target, int midVal) override;
+    void onBinarySearchMatch(const std::vector<int> &arr, int mid, int target, int midVal) override;
+    void onBinarySearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) override;
 };

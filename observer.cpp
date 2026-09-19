@@ -1,6 +1,7 @@
 #include "observer.h"
 #include "utils.h"
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -285,4 +286,180 @@ void ConsoleObserver::onQuickComplete(const std::vector<int> &arr, int compariso
     cout << "----------------------------------------\n";
 
     printComplexity("O(nlogn)", "O(nlogn)", "O(n^2)", "O(logn)");
+}
+
+// ----------------------------------------------------------------------------
+// Linear Search Visualizer Helpers
+// ----------------------------------------------------------------------------
+static void printSearchStep(const int arr[], int sz, int currentIndex, int target)
+{
+    cout << "[ ";
+    for (int i = 0; i < sz; i++)
+    {
+        if (i == currentIndex)
+        {
+            if (arr[i] == target)
+            {
+                cout << GREEN << "[" << arr[i] << "]" << RESET << " ";
+            }
+            else
+            {
+                cout << YELLOW << "[" << arr[i] << "]" << RESET << " ";
+            }
+        }
+        else
+        {
+            cout << arr[i] << " ";
+        }
+    }
+    cout << "]\n";
+}
+
+// ----------------------------------------------------------------------------
+// Binary Search Visualizer Helpers
+// ----------------------------------------------------------------------------
+static void printbinarySearchState(const vector<int> &arr, int st, int mid, int end, int tar)
+{
+    int n = arr.size();
+
+    cout << "\nIndex: ";
+    for (int i = 0; i < n; i++)
+    {
+        cout << setw(6) << i;
+    }
+
+    cout << "\nArray: ";
+    for (int i = 0; i < n; i++)
+    {
+        if (i == mid)
+        {
+            string val = "[" + to_string(arr[i]) + "]";
+            if (arr[i] == tar)
+                cout << GREEN << setw(6) << val << RESET;
+            else
+                cout << YELLOW << setw(6) << val << RESET;
+        }
+        else if (i >= st && i <= end)
+        {
+            cout << CYAN << setw(6) << arr[i] << RESET;
+        }
+        else
+        {
+            cout << GRAY << setw(6) << arr[i] << RESET;
+        }
+    }
+    cout << "\nPtrs : ";
+    for (int i = 0; i < n; i++)
+    {
+        string ptr = "";
+        if (i == st)
+            ptr += "st";
+        if (i == mid)
+            ptr += (ptr.empty() ? "" : "/") + string("mid");
+        if (i == end)
+            ptr += (ptr.empty() ? "" : "/") + string("end");
+        cout << setw(6) << (ptr.empty() ? " " : ptr);
+    }
+    cout << "\n";
+}
+
+// ----------------------------------------------------------------------------
+// Linear Search Console Hooks
+// ----------------------------------------------------------------------------
+void ConsoleObserver::onLinearSearchStart(const std::vector<int> &arr, int target) {
+    cout << "\n"
+         << YELLOW << "Initial Array:" << RESET << "\n";
+    printArray(const_cast<int*>(arr.data()), arr.size());
+    cout << "Target: " << CYAN << target << RESET << " | Size (sz): " << arr.size() << "\n";
+    waitForEnter();
+}
+
+void ConsoleObserver::onLinearSearchCheck(const std::vector<int> &arr, int currentIndex, int target, int comparisons) {
+    cout << "\nChecking index [" << currentIndex << "] -> Value: " << arr[currentIndex] << "\n";
+    printSearchStep(arr.data(), arr.size(), currentIndex, target);
+}
+
+void ConsoleObserver::onLinearSearchMatch(const std::vector<int> &arr, int index, int target) {
+    cout << GREEN << "--> Element found! Value " << target
+         << " located at index " << index << RESET << "\n";
+}
+
+void ConsoleObserver::onLinearSearchMismatch(const std::vector<int> &arr, int index, int currentVal, int target) {
+    cout << RED << "--> " << currentVal << " != " << target
+         << ", advancing cursor..." << RESET << "\n";
+}
+
+void ConsoleObserver::onLinearSearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) {
+    printHeader("LINEAR SEARCH COMPLETE");
+    if (resultIndex != -1)
+    {
+        cout << GREEN << "Result: Found at index " << resultIndex << RESET << "\n";
+    }
+    else
+    {
+        cout << RED << "Result: Element not found in array (-1)" << RESET << "\n";
+    }
+
+    cout << "\n----------------------------------------\n";
+    cout << " STATISTICS\n";
+    cout << "----------------------------------------\n";
+    cout << " Target Searched   : " << target << "\n";
+    cout << " Array Size (sz)   : " << arr.size() << "\n";
+    cout << " Total Comparisons : " << comparisons << "\n";
+    cout << " Returned Index    : " << resultIndex << "\n";
+    cout << "----------------------------------------\n";
+
+    printComplexity("O(1)", "O(n)", "O(n)", "O(1)");
+}
+
+// ----------------------------------------------------------------------------
+// Binary Search Console Hooks
+// ----------------------------------------------------------------------------
+void ConsoleObserver::onBinarySearchStart(const std::vector<int> &arr, int target) {
+    cout << "\n"
+         << YELLOW << "Search Array:" << RESET << "\n";
+    printArray(const_cast<int*>(arr.data()), arr.size());
+    cout << "Target: " << CYAN << target << RESET << " | Size: " << arr.size() << "\n";
+    waitForEnter();
+}
+
+void ConsoleObserver::onBinarySearchStep(const std::vector<int> &arr, int st, int mid, int end, int target, int comparisons) {
+    cout << "\n----------------------------------------";
+    cout << "\nst = " << st << ", end = " << end << " => mid = " << mid << " (arr[mid] = " << arr[mid] << ")\n";
+    printbinarySearchState(arr, st, mid, end, target);
+}
+
+void ConsoleObserver::onBinarySearchGreater(const std::vector<int> &arr, int mid, int target, int midVal) {
+    cout << YELLOW << "--> tar (" << target << ") > arr[mid] (" << midVal << "): Searching in 2nd half (st = mid + 1)" << RESET << "\n";
+}
+
+void ConsoleObserver::onBinarySearchSmaller(const std::vector<int> &arr, int mid, int target, int midVal) {
+    cout << BLUE << " --> tar(" << target << ") < arr[mid] (" << midVal << "): Searching in first half( end = mid - 1)" << RESET << "\n";
+}
+
+void ConsoleObserver::onBinarySearchMatch(const std::vector<int> &arr, int mid, int target, int midVal) {
+    cout << GREEN << " --> tar (" << target << ") == arr[mid] (" << midVal << "): Match found at index " << mid << "!" << RESET << "\n";
+}
+
+void ConsoleObserver::onBinarySearchComplete(const std::vector<int> &arr, int target, int resultIndex, int comparisons) {
+    printHeader("BINARY SEARCH COMPLETE");
+    if (resultIndex != -1)
+    {
+        cout << GREEN << "Result: Found target at index " << resultIndex << RESET << "\n";
+    }
+    else
+    {
+        cout << RED << "Result: Target not found in array (-1)" << RESET << "\n";
+    }
+
+    cout << "\n----------------------------------------\n";
+    cout << " STATISTICS\n";
+    cout << "----------------------------------------\n";
+    cout << " Target (tar)      : " << target << "\n";
+    cout << " Array Size        : " << arr.size() << "\n";
+    cout << " Total Iterations  : " << comparisons << "\n";
+    cout << " Returned Index    : " << resultIndex << "\n";
+    cout << "----------------------------------------\n";
+
+    printComplexity("O(1)", "O(logn)", "O(logn)", "O(1)");
 }
