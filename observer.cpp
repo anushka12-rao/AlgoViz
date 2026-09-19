@@ -138,3 +138,151 @@ void ConsoleObserver::onInsertionComplete(const std::vector<int> &arr, int compa
     printStats(comparisons, shifts, passes);
     printComplexity("O(n)", "O(n^2)", "O(n^2)", "O(1)");
 }
+
+// ----------------------------------------------------------------------------
+// Helper for printing subarrays
+// ----------------------------------------------------------------------------
+static void printSubarray(const vector<int> &arr, int st, int end)
+{
+    cout << "[";
+    for (int i = st; i <= end; i++)
+    {
+        cout << arr[i] << " ";
+    }
+    cout << "]\n";
+}
+
+// ----------------------------------------------------------------------------
+// Merge Sort Console Hooks
+// ----------------------------------------------------------------------------
+void ConsoleObserver::onMergeSplit(const std::vector<int> &arr, int st, int mid, int end) {
+    cout << "\n"
+         << MAGENTA << " Splitting range [" << st << "..." << end
+         << "] at mid = " << mid << RESET << "\n";
+    cout << " Left half:  [" << st << "..." << mid << "]\n";
+    cout << " Right half: [" << mid + 1 << "..." << end << "]\n";
+}
+
+void ConsoleObserver::onMergeStart(const std::vector<int> &arr, int st, int mid, int end) {
+    cout << "\n"
+         << CYAN << "---Merging Subarrays---" << RESET << "\n";
+    cout << "Left half [" << st << "..." << mid << "]:";
+    printSubarray(arr, st, mid);
+    cout << "Right half[" << mid + 1 << "..." << end << "]:";
+    printSubarray(arr, mid + 1, end);
+}
+
+void ConsoleObserver::onMergeCompare(const std::vector<int> &arr, int leftIdx, int rightIdx, int leftVal, int rightVal, bool leftChosen, int comparisons) {
+    cout << "Comparing Left (" << leftVal << ") and Right (" << rightVal << "):\n";
+    printArrayHighlight(const_cast<int*>(arr.data()), arr.size(), leftIdx, rightIdx);
+
+    if (leftChosen)
+    {
+        cout << GREEN << "--> " << leftVal << "<= " << rightVal
+             << ", adding " << leftVal << " to temp " << RESET << "\n";
+    }
+    else
+    {
+        cout << GREEN << "--> " << rightVal << " < " << leftVal
+             << ", adding " << rightVal << " to temp " << RESET << "\n";
+    }
+}
+
+void ConsoleObserver::onMergeCopyRemaining(const std::vector<int> &arr, int idx, int val, bool isLeft) {
+    if (isLeft)
+    {
+        cout << YELLOW << "--> Copying remaining Left element " << val << " to temp " << RESET << "\n";
+    }
+    else
+    {
+        cout << YELLOW << "--> Copying remaining Right element " << val << " to temp " << RESET << "\n";
+    }
+}
+
+void ConsoleObserver::onMergeSectionEnd(const std::vector<int> &arr, int st, int end, int mergesCount) {
+    cout << "\nMerged section [" << st << "..." << end << "]:";
+    printSubarray(arr, st, end);
+    cout << " Current Full Array:\n";
+    printArray(const_cast<int*>(arr.data()), arr.size());
+}
+
+void ConsoleObserver::onMergeComplete(const std::vector<int> &arr, int comparisons, int mergesCount) {
+    printHeader("MERGE SORT COMPLETE");
+    cout << GREEN << "Final Sorted Array: " << RESET << "\n";
+    printArray(const_cast<int*>(arr.data()), arr.size());
+
+    cout << "\n----------------------------------------\n";
+    cout << " STATISTICS\n";
+    cout << "----------------------------------------\n";
+    cout << " Total Comparisons : " << comparisons << "\n";
+    cout << " Total Merge Steps : " << mergesCount << "\n";
+    cout << "----------------------------------------\n";
+
+    printComplexity("O(nlogn)", "O(nlogn)", "O(nlogn)", "O(n)");
+}
+
+// ----------------------------------------------------------------------------
+// Quick Sort Console Hooks
+// ----------------------------------------------------------------------------
+void ConsoleObserver::onQuickPartitionStart(const std::vector<int> &arr, int st, int end, int pivotVal, int pivotIdx) {
+    cout << "\n"
+         << CYAN << "--- Partitioning Range [" << st << "..." << end << "] ---" << RESET << "\n";
+    cout << "Subarray: ";
+    printSubarray(arr, st, end);
+    cout << "Selected Pivot: " << YELLOW << pivotVal << RESET << " (at index " << pivotIdx << ")\n";
+}
+
+void ConsoleObserver::onQuickComparePivot(const std::vector<int> &arr, int j, int pivotIdx, int jVal, int pivotVal, int comparisons) {
+    cout << "\nComparing arr[" << j << "] (" << jVal << ") with Pivot (" << pivotVal << "):\n";
+    printArrayHighlight(const_cast<int*>(arr.data()), arr.size(), j, pivotIdx);
+}
+
+void ConsoleObserver::onQuickSwap(const std::vector<int> &arr, int idx, int j, int valIdxOriginal, int valJOriginal, int pivotVal, int comparisons, int swaps) {
+    cout << GREEN << " --> " << valJOriginal << " <= " << pivotVal
+         << ", swapping arr[" << j << "] (" << valJOriginal
+         << ") with arr[" << idx << "] (" << valIdxOriginal << ")" << RESET << "\n";
+    cout << "Array after swap:\n";
+    printArrayHighlight(const_cast<int*>(arr.data()), arr.size(), idx, j);
+}
+
+void ConsoleObserver::onQuickSameIndex(const std::vector<int> &arr, int idx, int valIdx, int pivotVal) {
+    cout << GREEN << " --> " << valIdx << " <= " << pivotVal
+         << ", swapping arr[" << idx << "] (" << valIdx
+         << ") with arr[" << idx << "] (" << valIdx << ")" << RESET << "\n";
+    cout << "Elements are at same index (" << idx << "), no move needed.\n";
+}
+
+void ConsoleObserver::onQuickGreater(const std::vector<int> &arr, int j, int pivotIdx, int valJ, int pivotVal) {
+    cout << RED << "--> " << valJ << " > " << pivotVal
+         << ", leaving on the right side" << RESET << "\n";
+}
+
+void ConsoleObserver::onQuickPivotPlaced(const std::vector<int> &arr, int pivotIdx, int oldEndIdx, int pivotVal, int st, int end, int swaps) {
+    cout << "\n"
+         << MAGENTA << "Placing pivot (" << pivotVal << ") at correct index " << pivotIdx << RESET << "\n";
+    cout << " Array after pivot placement:\n";
+    printArrayHighlight(const_cast<int*>(arr.data()), arr.size(), pivotIdx, oldEndIdx);
+    cout << " Subarray now: ";
+    printSubarray(arr, st, end);
+}
+
+void ConsoleObserver::onQuickSubparts(const std::vector<int> &arr, int pivIdx, int st, int end) {
+    cout << "\nPivot " << arr[pivIdx] << " is fixed at index " << pivIdx << ".\n";
+    cout << "Left partition to sort: [" << st << "..." << pivIdx - 1 << "]\n";
+    cout << "Right partition to sort: [" << pivIdx + 1 << "..." << end << "]\n";
+}
+
+void ConsoleObserver::onQuickComplete(const std::vector<int> &arr, int comparisons, int swaps) {
+    printHeader("QUICK SORT COMPLETE");
+    cout << GREEN << "Final Sorted Array:" << RESET << "\n";
+    printArray(const_cast<int*>(arr.data()), arr.size());
+
+    cout << "\n----------------------------------------\n";
+    cout << " STATISTICS\n";
+    cout << "----------------------------------------\n";
+    cout << " Total Comparisons : " << comparisons << "\n";
+    cout << " Total Swaps       : " << swaps << "\n";
+    cout << "----------------------------------------\n";
+
+    printComplexity("O(nlogn)", "O(nlogn)", "O(n^2)", "O(logn)");
+}

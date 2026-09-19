@@ -1,3 +1,4 @@
+#include "merge_sort.h"
 #include "../utils.h"
 #include <iostream>
 #include <vector>
@@ -5,125 +6,97 @@
 
 using namespace std;
 
-// Print a specific subarray range[st..end]
-static void printSubarray(const vector<int> &arr, int st, int end)
-{
-    cout << "[";
-    for (int i = st; i <= end; i++)
-    {
-        cout << arr[i] << " ";
-    }
-    cout << "]\n";
-}
-
-// Two-pointer merge routine to combine two subarrays into one
-static void merge(vector<int> &arr, int st, int mid, int end, int &comparisons, int &mergesCount, bool autoMode)
+// Two-pointer merge routine to combine two subarrays into one (internal linkage)
+static void merge(vector<int> &arr, int st, int mid, int end, int &comparisons, int &mergesCount, IAlgoObserver &obs)
 {
     vector<int> temp;
     int i = st;
     int j = mid + 1;
 
-    cout << "\n"
-         << CYAN << "---Merging Subarrays---" << RESET << "\n";
-    cout << "Left half [" << st << "..." << mid << "]:";
-    printSubarray(arr, st, mid);
-    cout << "Right half[" << mid + 1 << "..." << end << "]:";
-    printSubarray(arr, mid + 1, end);
+    obs.onMergeStart(arr, st, mid, end);
 
     // Compare elements from both halves and store the smaller one in temp
     while (i <= mid && j <= end)
     {
         comparisons++;
-        cout << "Comparing Left (" << arr[i] << ") and Right (" << arr[j] << "):\n";
-        printArrayHighlight(arr.data(), arr.size(), i, j);
+        bool leftChosen = (arr[i] <= arr[j]);
+        obs.onMergeCompare(arr, i, j, arr[i], arr[j], leftChosen, comparisons);
 
-        if (arr[i] <= arr[j])
+        if (leftChosen)
         {
-            cout << GREEN << "--> " << arr[i] << "<= " << arr[j]
-                 << ", adding " << arr[i] << " to temp " << RESET << "\n";
             temp.push_back(arr[i]);
             i++;
         }
         else
         {
-            cout << GREEN << "--> " << arr[j] << " < " << arr[i]
-                 << ", adding " << arr[j] << " to temp " << RESET << "\n";
             temp.push_back(arr[j]);
             j++;
         }
 
-        if (autoMode)
-            pause(800);
-        else
-            waitForEnter();
+        obs.onPause(800);
     }
 
     // Append remaining elements from the left subarray,if any
     while (i <= mid)
     {
-        cout << YELLOW << "--> Copying remaining Left element " << arr[i] << " to temp " << RESET << "\n";
+        obs.onMergeCopyRemaining(arr, i, arr[i], true);
         temp.push_back(arr[i]);
         i++;
-        if (autoMode)
-            pause(400);
-        else
-            waitForEnter();
+        obs.onPause(400);
     }
 
     // Append remaining elements from the right subarray , if any
     while (j <= end)
     {
-        cout << YELLOW << "--> Copying remaining Right element " << arr[j] << " to temp " << RESET << "\n";
+        obs.onMergeCopyRemaining(arr, j, arr[j], false);
         temp.push_back(arr[j]);
         j++;
-        if (autoMode)
-            pause(400);
-        else
-            waitForEnter();
+        obs.onPause(400);
     }
 
     // Copy sorted elements  from temp back into the original array
-    for (int idx = 0; idx < temp.size(); idx++)
+    for (size_t idx = 0; idx < temp.size(); idx++)
     {
         arr[st + idx] = temp[idx];
     }
 
     mergesCount++;
-    cout << "\nMerged section [" << st << "..." << end << "]:";
-    printSubarray(arr, st, end);
-    cout << " Current Full Array:\n";
-    printArray(arr.data(), arr.size());
-
-    if (autoMode)
-        pause(1000);
-    else
-        waitForEnter();
+    obs.onMergeSectionEnd(arr, st, end, mergesCount);
+    obs.onPause(1000);
 }
 
-// Recursive divide-and-Conquer function
+// Recursive divide-and-Conquer function (internal linkage)
 static void mergeSort(vector<int> &arr, int st, int end,
-                      int &comparisons, int &mergesCount, bool autoMode)
+                      int &comparisons, int &mergesCount, IAlgoObserver &obs)
 {
     if (st < end)
     {
         int mid = st + (end - st) / 2;
 
-        cout << "\n"
-             << MAGENTA << " Splitting range [" << st << "..." << end
-             << "] at mid = " << mid << RESET << "\n";
-        cout << " Left half:  [" << st << "..." << mid << "]\n";
-        cout << " Right half: [" << mid + 1 << "..." << end << "]\n";
+        obs.onMergeSplit(arr, st, mid, end);
+        obs.onPause(600);
 
-        if (autoMode)
-            pause(600);
-        else
-            waitForEnter();
+        mergeSort(arr, st, mid, comparisons, mergesCount, obs);
+        mergeSort(arr, mid + 1, end, comparisons, mergesCount, obs);
 
-        mergeSort(arr, st, mid, comparisons, mergesCount, autoMode);
-        mergeSort(arr, mid + 1, end, comparisons, mergesCount, autoMode);
-
-        merge(arr, st, mid, end, comparisons, mergesCount, autoMode);
+        merge(arr, st, mid, end, comparisons, mergesCount, obs);
     }
+}
+
+// Core algorithmic execution decoupled from terminal I/O
+void mergeSortCore(vector<int> &arr, IAlgoObserver &obs, bool autoMode)
+{
+    int comparisons = 0;
+    int mergesCount = 0;
+
+    obs.onInitial(arr);
+
+    if (arr.size() > 1)
+    {
+        mergeSort(arr, 0, arr.size() - 1, comparisons, mergesCount, obs);
+    }
+
+    obs.onMergeComplete(arr, comparisons, mergesCount);
 }
 
 // Primary execution function for merge sort visualizer
@@ -153,30 +126,8 @@ void mergeSortVisualizer()
         }
     }
 
-    int comparisons = 0;
-    int mergesCount = 0;
-
-    cout << "\n"
-         << YELLOW << "Initial Array: " << RESET << "\n";
-    printArray(arr.data(), n);
-    waitForEnter();
-
-    // 2.Start Recursive  Merge Sort
-    mergeSort(arr, 0, n - 1, comparisons, mergesCount, autoMode);
-
-    // 3.Display Resluts Dashboard
-    printHeader("MERGE SORT COMPLETE");
-    cout << GREEN << "Final Sorted Array: " << RESET << "\n";
-    printArray(arr.data(), n);
-
-    cout << "\n----------------------------------------\n";
-    cout << " STATISTICS\n";
-    cout << "----------------------------------------\n";
-    cout << " Total Comparisons : " << comparisons << "\n";
-    cout << " Total Merge Steps : " << mergesCount << "\n";
-    cout << "----------------------------------------\n";
-
-    printComplexity("O(nlogn)", "O(nlogn)", "O(nlogn)", "O(n)");
+    ConsoleObserver obs(autoMode);
+    mergeSortCore(arr, obs, autoMode);
 
     cout << "\nPress Enter to return to the main menu...";
     cin.get();
