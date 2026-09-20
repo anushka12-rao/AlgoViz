@@ -1,7 +1,21 @@
 #pragma once
+
+#ifndef _WIN32
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199309L
+#endif
+#endif
+
 #include <iostream>
-#include <windows.h>
 #include <vector>
+#include <string>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <time.h>
+#endif
 using namespace std;
 
 // ╔══════════════════════════════════════╗

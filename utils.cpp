@@ -1,11 +1,12 @@
 #include "utils.h"
 
+#ifdef _WIN32
 // If the Windows header doesn't define this flag, define it manually
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 // ╔══════════════════════════════════════╗
-// ║         ENABLE COLORS                ║
+// ║         ENABLE COLORS (WINDOWS)      ║
 // ╚══════════════════════════════════════╝
 void enableColors()
 {
@@ -18,6 +19,16 @@ void enableColors()
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     SetConsoleMode(hOut, dwMode);
 }
+#else
+// ╔══════════════════════════════════════╗
+// ║         ENABLE COLORS (LINUX/POSIX)  ║
+// ╚══════════════════════════════════════╝
+void enableColors()
+{
+    // Standard Linux/POSIX terminals support UTF-8 and ANSI escape codes natively.
+    std::cout.flush();
+}
+#endif
 
 // ╔══════════════════════════════════════╗
 // ║         HELPER FUNCTIONS             ║
@@ -184,7 +195,14 @@ void printStats(int comparisons, int swaps, int passes)
 // Pause for animation effect
 void pause(int ms)
 {
+#ifdef _WIN32
     Sleep(ms);
+#else
+    struct timespec req;
+    req.tv_sec = ms / 1000;
+    req.tv_nsec = (ms % 1000) * 1000000L;
+    nanosleep(&req, nullptr);
+#endif
 }
 
 // Wair for user to press Enter(Step Mode)
