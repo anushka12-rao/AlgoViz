@@ -34,6 +34,20 @@ CREATE INDEX IF NOT EXISTS idx_algorithms_category ON algorithms(category);
 CREATE INDEX IF NOT EXISTS idx_algorithms_enabled_order ON algorithms(is_enabled, display_order);
 `;
 
+export const CREATE_USERS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  password_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
+`;
+
 export function initializeSchema(db: Database.Database): void {
   db.exec(CREATE_ALGORITHMS_TABLE_SQL);
+  db.exec(CREATE_USERS_TABLE_SQL);
 }

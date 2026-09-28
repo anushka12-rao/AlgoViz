@@ -11,3 +11,7 @@ export const DEFAULT_ENGINE_PATH = path.resolve(__dirname, '../../../', ENGINE_B
 export const ENGINE_TIMEOUT_MS = 3000;
 export const MAX_STDOUT_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_CONCURRENT_PROCESSES = 20;
+
+export const JWT_EXPIRY = '7d';
+export const JWT_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+export const BCRYPT_SALT_ROUNDS = 10;

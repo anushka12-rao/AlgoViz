@@ -28,6 +28,7 @@ export async function apiClient<T>(url: string, options?: RequestInit): Promise<
   let response: Response;
   try {
     response = await fetch(url, {
+      credentials: 'include',
       ...options,
       headers: {
         Accept: 'application/json',

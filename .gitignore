@@ -1,2 +1,7 @@
 # Generated Linux headless C++ engine executable
 algoviz-engine
+
+# Environment variables
+.env
+.env.*
+!.env.example
