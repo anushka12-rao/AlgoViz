@@ -65,14 +65,30 @@ export function getDefaultCodeForStatus(status: number): string {
 }
 
 export async function apiClient<T>(url: string, options?: RequestInit): Promise<T> {
+  const method = (options?.method || 'GET').toUpperCase();
+  const hasBody = options?.body !== undefined && options?.body !== null;
+  const isGetOrHead = method === 'GET' || method === 'HEAD';
+
+  const defaultHeaders: Record<string, string> = {
+    Accept: 'application/json',
+  };
+
+  if (
+    hasBody &&
+    !isGetOrHead &&
+    !(typeof FormData !== 'undefined' && options?.body instanceof FormData) &&
+    !(typeof Blob !== 'undefined' && options?.body instanceof Blob)
+  ) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {
       credentials: 'include',
       ...options,
       headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...options?.headers,
       },
     });
