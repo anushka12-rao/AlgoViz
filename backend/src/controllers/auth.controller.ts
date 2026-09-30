@@ -2,9 +2,9 @@ import { Request, Response, NextFunction, CookieOptions } from 'express';
 import { AuthService } from '../services/auth.service';
 import { signupSchema, loginSchema } from '../schemas/auth.schema';
 import { env } from '../config/env';
-import { JWT_COOKIE_MAX_AGE_MS } from '../config/constants';
+import { USER_COOKIE_NAME, JWT_COOKIE_MAX_AGE_MS } from '../config/constants';
 
-const COOKIE_NAME = 'token';
+const COOKIE_NAME = USER_COOKIE_NAME;
 
 function getSessionCookieOptions(): CookieOptions {
   return {

@@ -4,6 +4,7 @@ import request from 'supertest';
 import Database from 'better-sqlite3';
 import { app } from '../src/app';
 import { initDatabase, closeDatabase } from '../src/db/connection';
+import { USER_COOKIE_NAME } from '../src/config/constants';
 
 describe('Backend User Authentication Tests', () => {
   let testDb: Database.Database;
@@ -43,7 +44,7 @@ describe('Backend User Authentication Tests', () => {
     const cookies = res.headers['set-cookie'];
     assert.ok(cookies, 'Set-Cookie header must be present');
     const cookieStr = Array.isArray(cookies) ? cookies.join('; ') : cookies;
-    assert.ok(cookieStr.includes('token='), 'Cookie must contain token');
+    assert.ok(cookieStr.includes(`${USER_COOKIE_NAME}=`), `Cookie must contain ${USER_COOKIE_NAME}`);
     assert.ok(cookieStr.toLowerCase().includes('httponly'), 'Cookie must be HttpOnly');
 
     // Verify database record has hashed password, never plaintext
@@ -219,7 +220,7 @@ describe('Backend User Authentication Tests', () => {
     assert.ok(cookies);
     const cookieStr = Array.isArray(cookies) ? cookies.join('; ') : cookies;
     assert.ok(
-      cookieStr.includes('token=;') || cookieStr.includes('Expires=Thu, 01 Jan 1970') || cookieStr.includes('Max-Age=0'),
+      cookieStr.includes(`${USER_COOKIE_NAME}=;`) || cookieStr.includes('Expires=Thu, 01 Jan 1970') || cookieStr.includes('Max-Age=0'),
       'Cookie must be cleared/expired'
     );
 

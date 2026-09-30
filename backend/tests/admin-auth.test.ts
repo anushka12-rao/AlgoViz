@@ -135,7 +135,7 @@ describe('Backend Administrator Authentication Tests', () => {
   });
 
   // 7. Normal user session cannot access admin routes
-  it('7a. Normal user session cookie (token=...) cannot access GET /api/admin/me (returns 401 Unauthorized)', async () => {
+  it('7a. Normal user session cookie (algoviz_session=...) cannot access GET /api/admin/me (returns 401 Unauthorized)', async () => {
     // Generate valid normal user session cookie
     const userRes = await request(app)
       .post('/api/auth/signup')

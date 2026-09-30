@@ -41,7 +41,7 @@ describe('Phase 9B Backend Skeleton Tests', () => {
 
     assert.strictEqual(res.status, 204);
     assert.strictEqual(res.headers['access-control-allow-origin'], 'http://localhost:3000');
-    assert.strictEqual(res.headers['access-control-allow-methods'], 'GET, POST, OPTIONS');
+    assert.strictEqual(res.headers['access-control-allow-methods'], 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     assert.ok(res.headers['access-control-allow-headers'].includes('Content-Type'));
   });
 

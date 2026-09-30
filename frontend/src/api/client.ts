@@ -24,6 +24,46 @@ function sanitizeErrorMessage(msg: string): string {
   return msg;
 }
 
+export function getDefaultMessageForStatus(status: number): string {
+  switch (status) {
+    case 401:
+      return 'Authentication required or session expired. Please log in.';
+    case 403:
+      return 'Access forbidden. You do not have permission to perform this action.';
+    case 404:
+      return 'The requested resource or endpoint was not found.';
+    case 409:
+      return 'A conflict occurred with the current state of the resource.';
+    case 422:
+      return 'The submitted data was invalid.';
+    default:
+      if (status >= 500) {
+        return 'Server error. The server encountered an internal issue. Please try again later.';
+      }
+      return `Request failed with status ${status}`;
+  }
+}
+
+export function getDefaultCodeForStatus(status: number): string {
+  switch (status) {
+    case 401:
+      return 'UNAUTHORIZED';
+    case 403:
+      return 'FORBIDDEN';
+    case 404:
+      return 'NOT_FOUND';
+    case 409:
+      return 'CONFLICT';
+    case 422:
+      return 'VALIDATION_ERROR';
+    default:
+      if (status >= 500) {
+        return 'SERVER_ERROR';
+      }
+      return 'API_ERROR';
+  }
+}
+
 export async function apiClient<T>(url: string, options?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -48,6 +88,13 @@ export async function apiClient<T>(url: string, options?: RequestInit): Promise<
   try {
     data = await response.json();
   } catch {
+    if (!response.ok) {
+      throw new ApiError(
+        getDefaultMessageForStatus(response.status),
+        response.status,
+        getDefaultCodeForStatus(response.status)
+      );
+    }
     throw new ApiError(
       'Received an invalid response from the server.',
       response.status,
@@ -60,9 +107,12 @@ export async function apiClient<T>(url: string, options?: RequestInit): Promise<
     const rawMessage =
       typeof errorObj?.message === 'string' && errorObj.message.length > 0
         ? errorObj.message
-        : `Request failed with status ${response.status}`;
+        : getDefaultMessageForStatus(response.status);
     const safeMessage = sanitizeErrorMessage(rawMessage);
-    const code = typeof errorObj?.code === 'string' ? errorObj.code : 'API_ERROR';
+    const code =
+      typeof errorObj?.code === 'string'
+        ? errorObj.code
+        : getDefaultCodeForStatus(response.status);
     throw new ApiError(safeMessage, response.status, code);
   }
 

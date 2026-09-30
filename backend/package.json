@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx --test tests/health.test.ts tests/algorithms.test.ts tests/visualize.test.ts tests/auth.test.ts tests/admin-auth.test.ts tests/admin-catalog.test.ts"
+    "test": "tsx --test tests/health.test.ts tests/algorithms.test.ts tests/visualize.test.ts tests/auth.test.ts tests/admin-auth.test.ts tests/admin-catalog.test.ts tests/regression-audit.test.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

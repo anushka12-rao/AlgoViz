@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { SafeUser } from '../types/user';
+import { USER_COOKIE_NAME } from '../config/constants';
 
 declare global {
   namespace Express {
@@ -31,7 +32,7 @@ export function parseCookies(cookieHeader?: string): Record<string, string> {
 export function createAuthMiddleware(authService: AuthService = new AuthService()) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const cookies = parseCookies(req.headers.cookie);
-    const token = cookies['token'];
+    const token = cookies[USER_COOKIE_NAME];
 
     if (!token) {
       res.status(401).json({

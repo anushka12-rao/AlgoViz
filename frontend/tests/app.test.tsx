@@ -4,6 +4,8 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { routes } from '../src/routes';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { ErrorBoundary } from '../src/components/common/ErrorBoundary';
+import { normalizeApiBaseUrl } from '../src/api/config';
+import { apiClient } from '../src/api/client';
 
 const MOCK_APP_ALGORITHMS = [
   {
@@ -158,5 +160,88 @@ describe('Phase 10B Frontend Foundation Tests', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
     expect(screen.queryByText(/Simulated rendering failure/i)).not.toBeInTheDocument();
+  });
+
+  describe('API URL Normalization & Status Code Error Handling', () => {
+    it('normalizeApiBaseUrl correctly formats API URLs with or without /api and trailing slashes', () => {
+      expect(normalizeApiBaseUrl(undefined)).toBe('/api');
+      expect(normalizeApiBaseUrl('')).toBe('/api');
+      expect(normalizeApiBaseUrl('   ')).toBe('/api');
+      expect(normalizeApiBaseUrl('/api')).toBe('/api');
+      expect(normalizeApiBaseUrl('/api/')).toBe('/api');
+      expect(normalizeApiBaseUrl('https://algoviz-api-zezm.onrender.com')).toBe(
+        'https://algoviz-api-zezm.onrender.com/api'
+      );
+      expect(normalizeApiBaseUrl('https://algoviz-api-zezm.onrender.com/')).toBe(
+        'https://algoviz-api-zezm.onrender.com/api'
+      );
+      expect(normalizeApiBaseUrl('https://algoviz-api-zezm.onrender.com/api')).toBe(
+        'https://algoviz-api-zezm.onrender.com/api'
+      );
+      expect(normalizeApiBaseUrl('https://algoviz-api-zezm.onrender.com/api/')).toBe(
+        'https://algoviz-api-zezm.onrender.com/api'
+      );
+    });
+
+    it('apiClient distinguishes 401 Unauthorized from connection failure', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required. Please log in.' },
+        }),
+      });
+
+      await expect(apiClient('/api/auth/me')).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 401,
+        code: 'UNAUTHORIZED',
+        message: 'Authentication required. Please log in.',
+      });
+    });
+
+    it('apiClient provides status-specific default message when error body has no message', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ success: false }),
+      });
+
+      await expect(apiClient('/api/admin/me')).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 403,
+        code: 'FORBIDDEN',
+        message: expect.stringContaining('Access forbidden'),
+      });
+    });
+
+    it('apiClient handles non-JSON HTTP errors with status-specific defaults', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        json: async () => {
+          throw new Error('Not JSON');
+        },
+      });
+
+      await expect(apiClient('/api/visualize')).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 502,
+        code: 'SERVER_ERROR',
+        message: expect.stringContaining('Server error'),
+      });
+    });
+
+    it('apiClient handles network disconnection as NETWORK_ERROR with connection message', async () => {
+      global.fetch = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+      await expect(apiClient('/api/algorithms')).rejects.toMatchObject({
+        name: 'ApiError',
+        statusCode: 0,
+        code: 'NETWORK_ERROR',
+        message: expect.stringContaining('Unable to connect to the server'),
+      });
+    });
   });
 });

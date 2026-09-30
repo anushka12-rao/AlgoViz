@@ -1,5 +1,20 @@
-export const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/+$/, '') || '/api';
+export function normalizeApiBaseUrl(rawUrl?: string): string {
+  if (!rawUrl) {
+    return '/api';
+  }
+  const trimmed = rawUrl.trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return '/api';
+  }
+  if (trimmed.endsWith('/api')) {
+    return trimmed;
+  }
+  return `${trimmed}/api`;
+}
+
+export const API_BASE_URL: string = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_URL as string | undefined
+);
 
 export const API_ENDPOINTS = {
   algorithms: `${API_BASE_URL}/algorithms`,
