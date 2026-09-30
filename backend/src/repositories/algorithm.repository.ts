@@ -19,6 +19,24 @@ export class AlgorithmRepository {
       .all() as AlgorithmEntity[];
   }
 
+  public findAll(): AlgorithmEntity[] {
+    return this.db
+      .prepare('SELECT * FROM algorithms ORDER BY display_order ASC')
+      .all() as AlgorithmEntity[];
+  }
+
+  public setEnabled(id: string, enabled: boolean): AlgorithmEntity | null {
+    const intVal = enabled ? 1 : 0;
+    const result = this.db
+      .prepare("UPDATE algorithms SET is_enabled = ?, updated_at = DATETIME('now') WHERE id = ?")
+      .run(intVal, id);
+    if (result.changes === 0) {
+      return null;
+    }
+    return this.findById(id);
+  }
+
+
   public findEnabledById(id: string): AlgorithmEntity | null {
     const row = this.db
       .prepare('SELECT * FROM algorithms WHERE id = ? AND is_enabled = 1 LIMIT 1')

@@ -45,3 +45,8 @@ export interface AlgorithmDTO {
   input_type: AlgorithmInputType;
   display_order: number;
 }
+
+export interface AdminAlgorithmDTO extends AlgorithmDTO {
+  is_enabled: boolean;
+}
+

@@ -1,5 +1,5 @@
 import { AlgorithmRepository } from '../repositories/algorithm.repository';
-import { AlgorithmDTO, AlgorithmEntity } from '../types/algorithm';
+import { AlgorithmDTO, AdminAlgorithmDTO, AlgorithmEntity } from '../types/algorithm';
 
 export class AlgorithmService {
   private repository: AlgorithmRepository;
@@ -11,6 +11,19 @@ export class AlgorithmService {
   public getPublicCatalog(): AlgorithmDTO[] {
     const entities = this.repository.findAllEnabled();
     return entities.map(entity => this.mapToDTO(entity));
+  }
+
+  public getAllAlgorithms(): AdminAlgorithmDTO[] {
+    const entities = this.repository.findAll();
+    return entities.map(entity => this.mapToAdminDTO(entity));
+  }
+
+  public setAlgorithmEnabled(id: string, enabled: boolean): AdminAlgorithmDTO | null {
+    const entity = this.repository.setEnabled(id, enabled);
+    if (!entity) {
+      return null;
+    }
+    return this.mapToAdminDTO(entity);
   }
 
   public getAlgorithmById(id: string): AlgorithmDTO | null {
@@ -39,4 +52,12 @@ export class AlgorithmService {
       display_order: entity.display_order,
     };
   }
+
+  private mapToAdminDTO(entity: AlgorithmEntity): AdminAlgorithmDTO {
+    return {
+      ...this.mapToDTO(entity),
+      is_enabled: entity.is_enabled === 1,
+    };
+  }
 }
+

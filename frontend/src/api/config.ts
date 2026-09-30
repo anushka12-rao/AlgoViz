@@ -9,4 +9,10 @@ export const API_ENDPOINTS = {
   authLogin: `${API_BASE_URL}/auth/login`,
   authLogout: `${API_BASE_URL}/auth/logout`,
   authMe: `${API_BASE_URL}/auth/me`,
+  adminLogin: `${API_BASE_URL}/admin/login`,
+  adminLogout: `${API_BASE_URL}/admin/logout`,
+  adminMe: `${API_BASE_URL}/admin/me`,
+  adminAlgorithms: `${API_BASE_URL}/admin/algorithms`,
+  adminAlgorithmStatus: (id: string) => `${API_BASE_URL}/admin/algorithms/${encodeURIComponent(id)}`,
 } as const;
+
