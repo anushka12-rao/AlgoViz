@@ -129,6 +129,18 @@ describe('Frontend User Authentication System Tests', () => {
 
     expect(screen.getByRole('link', { name: /^Login$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^Sign Up$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /admin/i })).not.toBeInTheDocument();
+  });
+
+  it('7b. Normal authenticated user does not see any Admin link in Header', async () => {
+    localStorage.removeItem('algoviz_auth_mode');
+    renderWithRouter('/');
+
+    expect(screen.getByText('TestUser')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign Out/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Home$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Catalog$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /admin/i })).not.toBeInTheDocument();
   });
 
   it('8. Sign Out action clears user session in Header and shows Login button', async () => {

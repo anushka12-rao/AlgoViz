@@ -33,14 +33,6 @@ export const Header: React.FC = () => {
                 Catalog
               </NavLink>
             </li>
-            <li>
-              <NavLink
-                to="/admin/dashboard"
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              >
-                Admin
-              </NavLink>
-            </li>
             {user ? (
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span
