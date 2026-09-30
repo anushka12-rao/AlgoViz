@@ -3,6 +3,7 @@ import { SERVICE_NAME } from '../config/constants';
 import { algorithmRouter } from './algorithm.routes';
 import { visualizeRouter } from './visualize.routes';
 import { authRouter } from './auth.routes';
+import { adminRouter } from './admin.routes';
 
 export const apiRouter = Router();
 
@@ -15,5 +16,7 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
 });
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/admin', adminRouter);
 apiRouter.use('/algorithms', algorithmRouter);
 apiRouter.use('/visualize', visualizeRouter);
+

@@ -15,3 +15,4 @@ export const MAX_CONCURRENT_PROCESSES = 20;
 export const JWT_EXPIRY = '7d';
 export const JWT_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 export const BCRYPT_SALT_ROUNDS = 10;
+export const ADMIN_COOKIE_NAME = 'algoviz_admin_session';
